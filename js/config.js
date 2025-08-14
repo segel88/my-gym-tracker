@@ -5,8 +5,8 @@
 // Configurazione principale
 const CONFIG = {
     // Google Sheets & Apps Script
-    spreadsheetId: '', // Da configurare dopo aver creato il foglio
-    webAppUrl: '', // URL del Web App Google Apps Script
+    spreadsheetId: '1UlO-G1jAzetmAuOP5dtNGQ2dvUo3hPtk0-soPAbxFZI', // DA CONFIGURARE: Inserisci qui l'ID del tuo Google Sheet
+    webAppUrl: 'https://script.google.com/macros/s/AKfycbyb5nHk3JKHxWDfgmtcQ9CmG5v97cMRI6nRRwIRNQbvVay3of2b_XVXYFnHWsa5OLY5/exec', // DA CONFIGURARE: Inserisci qui l'URL del tuo Web App Google Apps Script
     
     // Versioning
     version: '1.0.0',

@@ -23,6 +23,7 @@ class GymTracker {
             this.loadUserSettings();
             this.showMainMenu();
             this.checkOnlineStatus();
+            this.loadPendingSync();
         });
     }
 
@@ -70,6 +71,21 @@ class GymTracker {
      */
     checkOnlineStatus() {
         this.isOnline = navigator.onLine;
+    }
+
+    /**
+     * Carica la coda di sincronizzazione dal localStorage
+     */
+    loadPendingSync() {
+        try {
+            const pending = localStorage.getItem('pending_sync');
+            if (pending) {
+                this.pendingSync = JSON.parse(pending);
+            }
+        } catch (error) {
+            console.warn('Errore caricamento coda sync:', error);
+            this.pendingSync = [];
+        }
     }
 
     /**
@@ -267,6 +283,10 @@ class GymTracker {
      * Carica template dal server
      */
     async fetchTemplateFromServer(workoutNumber) {
+        if (!CONFIG.webAppUrl) {
+            throw new Error('URL Web App non configurato');
+        }
+
         const response = await fetch(`${CONFIG.webAppUrl}?action=getTemplate&id=${workoutNumber}`, {
             method: 'GET',
             headers: {
@@ -279,6 +299,10 @@ class GymTracker {
         }
 
         const data = await response.json();
+        if (!data.success) {
+            throw new Error(data.message || 'Errore caricamento template');
+        }
+        
         return data.template;
     }
 
@@ -631,18 +655,114 @@ class GymTracker {
     }
 
     /**
-     * Placeholder per le sezioni future
+     * Carica statistiche dal server
      */
-    showStats() {
-        this.showMessage('📊 Sezione Statistiche in sviluppo', 'info');
+    async loadStats() {
+        try {
+            if (!this.isOnline || !CONFIG.webAppUrl) {
+                throw new Error('Connessione richiesta per le statistiche');
+            }
+
+            this.showLoading('Caricamento statistiche...');
+
+            const response = await fetch(`${CONFIG.webAppUrl}?action=getStats`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            this.hideLoading();
+
+            if (data.success) {
+                return data.stats;
+            } else {
+                throw new Error(data.message || 'Errore caricamento statistiche');
+            }
+
+        } catch (error) {
+            this.hideLoading();
+            console.error('Errore loadStats:', error);
+            throw error;
+        }
     }
 
+    /**
+     * Carica record personali dal server
+     */
+    async loadRecords() {
+        try {
+            if (!this.isOnline || !CONFIG.webAppUrl) {
+                throw new Error('Connessione richiesta per i record');
+            }
+
+            this.showLoading('Caricamento record...');
+
+            const response = await fetch(`${CONFIG.webAppUrl}?action=getRecords`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            this.hideLoading();
+
+            if (data.success) {
+                return data.records;
+            } else {
+                throw new Error(data.message || 'Errore caricamento record');
+            }
+
+        } catch (error) {
+            this.hideLoading();
+            console.error('Errore loadRecords:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Placeholder per statistiche (implementazione futura)
+     */
+    async showStats() {
+        try {
+            const stats = await this.loadStats();
+            // TODO: Implementare UI per le statistiche
+            this.showMessage('📊 Statistiche caricate! UI in sviluppo...', 'info');
+            console.log('Statistiche:', stats);
+        } catch (error) {
+            this.showMessage('📊 Sezione Statistiche: ' + error.message, 'error');
+        }
+    }
+
+    /**
+     * Placeholder per gestione schede (implementazione futura)
+     */
     showSchede() {
         this.showMessage('📝 Gestione Schede in sviluppo', 'info');
     }
 
-    showMaxRecords() {
-        this.showMessage('🏆 Record Personali in sviluppo', 'info');
+    /**
+     * Placeholder per record personali (implementazione futura)
+     */
+    async showMaxRecords() {
+        try {
+            const records = await this.loadRecords();
+            // TODO: Implementare UI per i record
+            this.showMessage('🏆 Record caricati! UI in sviluppo...', 'info');
+            console.log('Record:', records);
+        } catch (error) {
+            this.showMessage('🏆 Record Personali: ' + error.message, 'error');
+        }
     }
 
     /**
