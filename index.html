@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Gym Tracker</title>
+    
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#667eea">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Gym Tracker">
+    
+    <!-- Manifest -->
+    <link rel="manifest" href="manifest.json">
+    
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="css/styles.css">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="assets/icons/favicon.ico">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>💪 My Gym Tracker</h1>
+            <p>Traccia i tuoi progressi</p>
+        </div>
+
+        <!-- Menu Principale -->
+        <div id="main-menu" class="main-menu">
+            <button class="menu-button" onclick="showSubmenu()">
+                🏋️ Nuova Sessione
+            </button>
+            <button class="menu-button secondary" onclick="showStats()">
+                📊 Statistiche
+            </button>
+            <button class="menu-button warning" onclick="showSchede()">
+                📝 Gestisci Schede
+            </button>
+            <button class="menu-button success" onclick="showMaxRecords()">
+                🏆 Record Personali
+            </button>
+        </div>
+
+        <!-- Sottomenu Sessioni -->
+        <div id="submenu" class="submenu">
+            <button class="menu-button back-button" onclick="showMainMenu()">
+                ← Torna al Menu
+            </button>
+            <div class="current-date" id="current-date"></div>
+            <button class="menu-button" onclick="startWorkout(1)">
+                🥇 Primo Allenamento Settimanale
+            </button>
+            <button class="menu-button" onclick="startWorkout(2)">
+                🥈 Secondo Allenamento Settimanale
+            </button>
+            <button class="menu-button" onclick="startWorkout(3)">
+                🥉 Terzo Allenamento Settimanale
+            </button>
+        </div>
+
+        <!-- Sessione Allenamento -->
+        <div id="workout-session" class="workout-session">
+            <button class="menu-button back-button" onclick="showSubmenu()">
+                ← Torna alle Sessioni
+            </button>
+            <div class="current-date" id="workout-date"></div>
+            <h2 id="workout-title" style="text-align: center; margin: 20px 0; color: #2d3436;"></h2>
+            
+            <div id="exercises-container">
+                <!-- Gli esercizi verranno caricati dinamicamente -->
+            </div>
+
+            <button class="save-session" onclick="saveWorkoutSession()">
+                💾 Salva Sessione
+            </button>
+        </div>
+
+        <!-- Loading Overlay -->
+        <div id="loading-overlay" class="loading-overlay" style="display: none;">
+            <div class="loading-spinner"></div>
+            <p>Caricamento...</p>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/config.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
