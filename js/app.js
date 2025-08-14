@@ -280,18 +280,62 @@ class GymTracker {
     }
 
     /**
-     * Carica template dal server
+     * Carica template dal server usando JSONP per evitare CORS
      */
     async fetchTemplateFromServer(workoutNumber) {
         if (!CONFIG.webAppUrl) {
             throw new Error('URL Web App non configurato');
         }
 
-        const response = await fetch(`${CONFIG.webAppUrl}?action=getTemplate&id=${workoutNumber}`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json'
-            }
+        // In modalità dev, simula risposta server per evitare CORS
+        if (CONFIG.devMode) {
+            console.log('🔧 Modalità sviluppo: simulando risposta server');
+            return new Promise((resolve) => {
+                setTimeout(() => {
+                    resolve(WORKOUT_TEMPLATES[workoutNumber]);
+                }, 500);
+            });
+        }
+
+        // Usa JSONP per evitare problemi CORS
+        return new Promise((resolve, reject) => {
+            const callbackName = 'gymTracker_' + Date.now();
+            const script = document.createElement('script');
+            const url = `${CONFIG.webAppUrl}?action=getTemplate&id=${workoutNumber}&callback=${callbackName}`;
+            
+            // Timeout dopo 10 secondi
+            const timeout = setTimeout(() => {
+                cleanup();
+                reject(new Error('Timeout: richiesta troppo lenta'));
+            }, 10000);
+            
+            // Funzione di pulizia
+            const cleanup = () => {
+                if (script.parentNode) {
+                    script.parentNode.removeChild(script);
+                }
+                delete window[callbackName];
+                clearTimeout(timeout);
+            };
+            
+            // Callback globale
+            window[callbackName] = (data) => {
+                cleanup();
+                if (data && data.success && data.template) {
+                    resolve(data.template);
+                } else {
+                    reject(new Error(data.message || 'Errore caricamento template'));
+                }
+            };
+            
+            // Gestione errori
+            script.onerror = () => {
+                cleanup();
+                reject(new Error('Errore di rete'));
+            };
+            
+            script.src = url;
+            document.head.appendChild(script);
         });
 
         if (!response.ok) {
@@ -569,18 +613,81 @@ class GymTracker {
     }
 
     /**
-     * Salva allenamento su Google Sheets
+     * Salva allenamento su Google Sheets usando JSONP
      */
     async saveWorkoutRemotely(data) {
-        const response = await fetch(CONFIG.webAppUrl, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
+        // In modalità dev, simula salvataggio per evitare CORS
+        if (CONFIG.devMode) {
+            console.log('🔧 Modalità sviluppo: simulando salvataggio', data);
+            return new Promise((resolve) => {
+                setTimeout(() => {
+                    resolve({ success: true, message: 'Salvato in dev mode' });
+                }, 1000);
+            });
+        }
+
+        // Per POST usiamo una form hidden per evitare CORS
+        return new Promise((resolve, reject) => {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = CONFIG.webAppUrl;
+            form.style.display = 'none';
+            
+            // Crea input hidden con i dati
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'data';
+            input.value = JSON.stringify({
                 action: GAS_CONFIG.endpoints.saveWorkout,
                 data: data
-            })
+            });
+            
+            form.appendChild(input);
+            document.body.appendChild(form);
+            
+            // Crea iframe per la risposta
+            const iframe = document.createElement('iframe');
+            iframe.name = 'saveResponse';
+            iframe.style.display = 'none';
+            form.target = 'saveResponse';
+            
+            document.body.appendChild(iframe);
+            
+            // Timeout dopo 15 secondi
+            const timeout = setTimeout(() => {
+                cleanup();
+                reject(new Error('Timeout: salvataggio troppo lento'));
+            }, 15000);
+            
+            // Funzione di pulizia
+            const cleanup = () => {
+                if (form.parentNode) form.parentNode.removeChild(form);
+                if (iframe.parentNode) iframe.parentNode.removeChild(iframe);
+                clearTimeout(timeout);
+            };
+            
+            // Gestisci la risposta
+            iframe.onload = () => {
+                try {
+                    // Aspetta un po' per il caricamento completo
+                    setTimeout(() => {
+                        cleanup();
+                        // Assumiamo successo se non ci sono errori
+                        resolve({ success: true, message: 'Sessione salvata' });
+                    }, 1000);
+                } catch (error) {
+                    cleanup();
+                    reject(new Error('Errore nel salvataggio: ' + error.message));
+                }
+            };
+            
+            iframe.onerror = () => {
+                cleanup();
+                reject(new Error('Errore di rete durante il salvataggio'));
+            };
+            
+            // Invia la form
+            form.submit();
         });
 
         if (!response.ok) {

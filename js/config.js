@@ -6,7 +6,7 @@
 const CONFIG = {
     // Google Sheets & Apps Script
     spreadsheetId: '1UlO-G1jAzetmAuOP5dtNGQ2dvUo3hPtk0-soPAbxFZI', // DA CONFIGURARE: Inserisci qui l'ID del tuo Google Sheet
-    webAppUrl: 'https://script.google.com/macros/s/AKfycbyb5nHk3JKHxWDfgmtcQ9CmG5v97cMRI6nRRwIRNQbvVay3of2b_XVXYFnHWsa5OLY5/exec', // DA CONFIGURARE: Inserisci qui l'URL del tuo Web App Google Apps Script
+    webAppUrl: 'https://script.google.com/macros/s/AKfycbx3h_Gw5lX8jdrg_fUAzK4fj-elUKz7AEN5U8_zGmHqM4jbDz479XKdCola4_82yQb1/exec', // DA CONFIGURARE: Inserisci qui l'URL del tuo Web App Google Apps Script
     
     // Versioning
     version: '1.0.0',
