@@ -5,8 +5,11 @@
 // Configurazione principale
 const CONFIG = {
     // Google Sheets & Apps Script
-    spreadsheetId: '1UlO-G1jAzetmAuOP5dtNGQ2dvUo3hPtk0-soPAbxFZI', // DA CONFIGURARE: Inserisci qui l'ID del tuo Google Sheet
-    webAppUrl: 'https://script.google.com/macros/s/AKfycbx3h_Gw5lX8jdrg_fUAzK4fj-elUKz7AEN5U8_zGmHqM4jbDz479XKdCola4_82yQb1/exec', // DA CONFIGURARE: Inserisci qui l'URL del tuo Web App Google Apps Script
+    spreadsheetId: '1UlO-G1jAzetmAuOP5dtNGQ2dvUo3hPtk0-soPAbxFZI', // ← Il tuo ID vero
+    webAppUrl: 'https://script.google.com/macros/s/AKfycbyUk38cT_-iP94kbjkNEZDP0-IbipK5_a72u-KILNV63yskPKgzK50Mp3bK1npVmi-j/exec', // ← Il tuo URL vero
+    
+    // Modalità sviluppo (commentata per permettere connessione reale)
+    // devMode: location.protocol === 'file:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1',
     
     // Versioning
     version: '1.0.0',

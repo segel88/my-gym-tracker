@@ -1,93 +1,229 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Gym Tracker</title>
-    
-    <!-- PWA Meta Tags -->
-    <meta name="theme-color" content="#667eea">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="apple-mobile-web-app-title" content="Gym Tracker">
-    
-    <!-- Manifest -->
-    <link rel="manifest" href="manifest.json">
-    
-    <!-- Stylesheets -->
-    <link rel="stylesheet" href="css/styles.css">
-    
-    <!-- Favicon -->
-    <link rel="icon" type="image/x-icon" href="assets/icons/favicon.ico">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+  <meta charset="UTF-8" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1"
+  />
+  <title>My Gym Tracker</title>
+
+  <!-- PWA Meta (manifest ok; il SW non viene registrato in dev) -->
+  <meta name="theme-color" content="#667eea" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="Gym Tracker" />
+  <link rel="manifest" href="manifest.json" />
+
+  <!-- Favicon 1x1 (niente 404 su assets/icons/favicon.ico) -->
+  <link
+    rel="icon"
+    type="image/png"
+    href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII="
+  />
+
+  <!-- Chart.js per grafici -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Carico il CSS con cache-buster -->
+  <script>
+    (function () {
+      const V = Date.now();
+      window.__BUILD_ID__ = V;
+      const link = document.createElement("link");
+      link.rel = "stylesheet";
+      link.href = "css/styles.css?v=" + V;
+      document.head.appendChild(link);
+    })();
+  </script>
 </head>
 <body>
-    <div class="container">
-        <!-- Header -->
-        <div class="header">
-            <h1>💪 My Gym Tracker</h1>
-            <p>Traccia i tuoi progressi</p>
-        </div>
-
-        <!-- Menu Principale -->
-        <div id="main-menu" class="main-menu">
-            <button class="menu-button" onclick="showSubmenu()">
-                🏋️ Nuova Sessione
-            </button>
-            <button class="menu-button secondary" onclick="showStats()">
-                📊 Statistiche
-            </button>
-            <button class="menu-button warning" onclick="showSchede()">
-                📝 Gestisci Schede
-            </button>
-            <button class="menu-button success" onclick="showMaxRecords()">
-                🏆 Record Personali
-            </button>
-        </div>
-
-        <!-- Sottomenu Sessioni -->
-        <div id="submenu" class="submenu">
-            <button class="menu-button back-button" onclick="showMainMenu()">
-                ← Torna al Menu
-            </button>
-            <div class="current-date" id="current-date"></div>
-            <button class="menu-button" onclick="startWorkout(1)">
-                🥇 Primo Allenamento Settimanale
-            </button>
-            <button class="menu-button" onclick="startWorkout(2)">
-                🥈 Secondo Allenamento Settimanale
-            </button>
-            <button class="menu-button" onclick="startWorkout(3)">
-                🥉 Terzo Allenamento Settimanale
-            </button>
-        </div>
-
-        <!-- Sessione Allenamento -->
-        <div id="workout-session" class="workout-session">
-            <button class="menu-button back-button" onclick="showSubmenu()">
-                ← Torna alle Sessioni
-            </button>
-            <div class="current-date" id="workout-date"></div>
-            <h2 id="workout-title" style="text-align: center; margin: 20px 0; color: #2d3436;"></h2>
-            
-            <div id="exercises-container">
-                <!-- Gli esercizi verranno caricati dinamicamente -->
-            </div>
-
-            <button class="save-session" onclick="saveWorkoutSession()">
-                💾 Salva Sessione
-            </button>
-        </div>
-
-        <!-- Loading Overlay -->
-        <div id="loading-overlay" class="loading-overlay" style="display: none;">
-            <div class="loading-spinner"></div>
-            <p>Caricamento...</p>
-        </div>
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <h1>💪 My Gym Tracker</h1>
+      <p>Traccia i tuoi progressi</p>
     </div>
 
-    <!-- Scripts -->
-    <script src="js/config.js"></script>
-    <script src="js/utils.js"></script>
-    <script src="js/app.js"></script>
+    <!-- Menu Principale -->
+    <div id="main-menu" class="main-menu">
+      <button class="menu-button" onclick="showSubmenu()">
+        🏋️ Nuova Sessione
+      </button>
+      <button class="menu-button secondary" onclick="showStats()">
+        📊 Statistiche
+      </button>
+      <button class="menu-button warning" onclick="showSchede()">
+        📝 Gestisci Schede
+      </button>
+      <button class="menu-button success" onclick="showMaxRecords()">
+        🏆 Record Personali
+      </button>
+    </div>
+
+    <!-- Sottomenu Sessioni -->
+    <div id="submenu" class="submenu" style="display: none;">
+      <button class="menu-button back-button" onclick="showMainMenu()">
+        ← Torna al Menu
+      </button>
+      <div class="current-date" id="current-date"></div>
+      <button class="menu-button" onclick="startWorkout(1)">
+        🥇 Primo Allenamento Settimanale
+      </button>
+      <button class="menu-button" onclick="startWorkout(2)">
+        🥈 Secondo Allenamento Settimanale
+      </button>
+      <button class="menu-button" onclick="startWorkout(3)">
+        🥉 Terzo Allenamento Settimanale
+      </button>
+    </div>
+
+    <!-- Sessione Allenamento -->
+    <div id="workout-session" class="workout-session" style="display: none;">
+      <button class="menu-button back-button" onclick="showSubmenu()">
+        ← Torna alle Sessioni
+      </button>
+      <div class="current-date" id="workout-date"></div>
+      <h2 id="workout-title" style="text-align: center; margin: 20px 0; color: #2d3436;"></h2>
+
+      <div id="exercises-container">
+        <!-- Popolato dinamicamente da app.js -->
+      </div>
+
+      <button class="save-session" onclick="saveWorkoutSession()">
+        💾 Salva Sessione
+      </button>
+    </div>
+
+    <!-- STATISTICHE -->
+    <div id="stats-section" class="workout-session" style="display:none;">
+      <button class="menu-button back-button" onclick="showMainMenu()">
+        ← Torna al Menu
+      </button>
+      <h2 style="text-align:center; margin: 10px 0;">📊 Statistiche</h2>
+
+      <div class="exercise-card">
+        <div class="exercise-name">Andamento Peso Massimo</div>
+        <div class="sets-container" style="grid-template-columns:1fr;">
+          <canvas id="stats-chart-weight" height="220"></canvas>
+        </div>
+      </div>
+
+      <div class="exercise-card">
+        <div class="exercise-name">Andamento Volume Totale</div>
+        <div class="sets-container" style="grid-template-columns:1fr;">
+          <canvas id="stats-chart-volume" height="220"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- RECORD PERSONALI -->
+    <div id="records-section" class="workout-session" style="display:none;">
+      <button class="menu-button back-button" onclick="showMainMenu()">
+        ← Torna al Menu
+      </button>
+      <h2 style="text-align:center; margin: 10px 0;">🏆 Record Personali</h2>
+
+      <div class="exercise-card">
+        <div class="exercise-name">Tabella Record</div>
+        <div class="sets-container" style="grid-template-columns:1fr;">
+          <table id="records-table" style="width:100%; border-collapse:collapse;">
+            <thead>
+              <tr>
+                <th style="text-align:left; padding:8px; border-bottom:1px solid #ddd;">Esercizio</th>
+                <th style="text-align:right; padding:8px; border-bottom:1px solid #ddd;">Peso Max (kg)</th>
+                <th style="text-align:left; padding:8px; border-bottom:1px solid #ddd;">Data</th>
+                <th style="text-align:left; padding:8px; border-bottom:1px solid #ddd;">Sessione</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Righe generate da app.js -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- GESTIONE SCHEDE -->
+    <div id="schede-section" class="workout-session" style="display:none;">
+      <button class="menu-button back-button" onclick="showMainMenu()">
+        ← Torna al Menu
+      </button>
+      <h2 style="text-align:center; margin: 10px 0;">📝 Gestione Schede</h2>
+
+      <div class="exercise-card">
+        <div class="exercise-name">Scheda Corrente</div>
+        <div id="scheda-corrente" class="exercise-details">Caricamento...</div>
+        <div class="sets-container">
+          <button class="menu-button success" onclick="/* TODO: open create form */">
+            ➕ Crea nuova scheda
+          </button>
+          <button class="menu-button secondary" onclick="/* TODO: open edit form */">
+            ✏️ Modifica scheda corrente
+          </button>
+          <button class="menu-button warning" onclick="/* TODO: archiviare */">
+            📦 Archivia scheda corrente
+          </button>
+        </div>
+      </div>
+
+      <div class="exercise-card">
+        <div class="exercise-name">Storico Schede / Allenamenti</div>
+        <div id="schede-list" class="exercise-details">Nessuna scheda in archivio.</div>
+      </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="loading-overlay" style="display: none;">
+      <div class="loading-spinner"></div>
+      <p>Caricamento...</p>
+    </div>
+  </div>
+
+  <!-- DEV GUARD: in locale blocco qualsiasi registrazione SW e svuoto cache PRIMA di caricare gli script -->
+  <script>
+    (function () {
+      if (!("serviceWorker" in navigator)) return;
+      const isLocal =
+        location.hostname === "127.0.0.1" || location.hostname === "localhost";
+      if (isLocal) {
+        // Blocca eventuali chiamate a navigator.serviceWorker.register fatte da altri script
+        try {
+          const original = navigator.serviceWorker.register;
+          navigator.serviceWorker.register = function () {
+            console.warn("SW registration blocked in dev");
+            return Promise.resolve();
+          };
+        } catch (e) {}
+        // Deregistra SW già attivi e svuota Cache Storage
+        navigator.serviceWorker
+          .getRegistrations()
+          .then((rs) => rs.forEach((r) => r.unregister()));
+        if (window.caches?.keys) {
+          caches.keys().then((keys) => keys.forEach((k) => caches.delete(k)));
+        }
+        console.log("SW disattivato in dev, cache pulita");
+      }
+    })();
+  </script>
+
+  <!-- Carico gli script con cache-buster (dopo il DEV GUARD, così vale anche se app.js provasse a registrare SW) -->
+  <script>
+    (function () {
+      const V = window.__BUILD_ID__ || Date.now();
+      function add(src) {
+        const s = document.createElement("script");
+        s.src = src + "?v=" + V;
+        document.body.appendChild(s);
+      }
+      add("js/config.js");
+      add("js/utils.js");
+      add("js/app.js");
+    })();
+  </script>
 </body>
 </html>
