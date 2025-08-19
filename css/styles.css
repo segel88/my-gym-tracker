@@ -758,6 +758,61 @@ details ul li::before {
 }
 
 /* ================================
+   SCHEDE ATTIVE
+================================ */
+.active-scheda {
+    position: relative;
+    animation: pulseGreen 2s ease-in-out infinite;
+}
+
+.active-scheda::after {
+    content: 'ATTIVA';
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    padding: 4px 8px;
+    background: var(--neon-green);
+    color: var(--bg-primary);
+    font-size: 10px;
+    font-weight: bold;
+    letter-spacing: 1px;
+    animation: blink 2s infinite;
+}
+
+@keyframes pulseGreen {
+    0%, 100% { 
+        box-shadow: 0 0 20px rgba(0, 255, 65, 0.3);
+    }
+    50% { 
+        box-shadow: 0 0 40px rgba(0, 255, 65, 0.5);
+    }
+}
+
+/* Editor Schede */
+.exercise-row {
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.exercise-row:hover {
+    background: rgba(0, 255, 65, 0.05) !important;
+    border-color: var(--neon-green) !important;
+}
+
+#scheda-editor input[type="text"],
+#scheda-editor input[type="number"],
+#scheda-editor select,
+#scheda-editor textarea {
+    transition: all 0.3s ease;
+}
+
+#scheda-editor input:focus,
+#scheda-editor select:focus,
+#scheda-editor textarea:focus {
+    box-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
+}
+
+/* ================================
    PRINT STYLES
 ================================ */
 @media print {

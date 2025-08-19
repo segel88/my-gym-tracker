@@ -602,6 +602,1115 @@ renderEmptyStats() {
         });
     }
 
+
+    /**
+ * SISTEMA GESTIONE SCHEDE PERSONALIZZATE
+ * Aggiungi queste funzioni al tuo app.js nella classe GymTracker
+ */
+
+/**
+ * Mostra la sezione gestione schede con editor completo
+ */
+async showSchede() {
+    console.log('📝 Caricando gestione schede...');
+    this.hideAllSections();
+    
+    // Crea/mostra la sezione schede se non esiste
+    let schedeSection = document.getElementById('schede-section');
+    if (!schedeSection) {
+        schedeSection = document.createElement('div');
+        schedeSection.id = 'schede-section';
+        schedeSection.className = 'workout-session';
+        schedeSection.style.display = 'none';
+        document.querySelector('.container').appendChild(schedeSection);
+    }
+    
+    schedeSection.style.display = 'block';
+    
+    // Carica schede salvate
+    const savedWorkouts = this.loadCustomWorkouts();
+    
+    // Renderizza l'interfaccia
+    this.renderSchedeManager(savedWorkouts);
+}
+
+/**
+ * Carica schede personalizzate dal localStorage
+ */
+loadCustomWorkouts() {
+    try {
+        const saved = localStorage.getItem('custom_schede');
+        if (saved) {
+            return JSON.parse(saved);
+        }
+    } catch (err) {
+        console.error('Errore caricamento schede:', err);
+    }
+    
+    // Crea scheda default con struttura corretta
+    const defaultScheda = {
+        1: {
+            id: 1,
+            name: "Scheda Default",
+            description: "Scheda di base a 3 allenamenti",
+            isActive: true,
+            workout1: WORKOUT_TEMPLATES[1],
+            workout2: WORKOUT_TEMPLATES[2],
+            // workout3 viene generato automaticamente
+        }
+    };
+    
+    // Salva e attiva la scheda default
+    this.saveCustomWorkouts(defaultScheda);
+    localStorage.setItem('active_scheda_id', '1');
+    
+    return defaultScheda;
+}
+
+/**
+ * Salva schede personalizzate nel localStorage
+ */
+saveCustomWorkouts(workouts) {
+    try {
+        localStorage.setItem('custom_schede', JSON.stringify(workouts));
+        return true;
+    } catch (err) {
+        console.error('Errore salvataggio schede:', err);
+        return false;
+    }
+}
+
+/**
+ * Renderizza l'interfaccia di gestione schede
+ */
+renderSchedeManager(workouts) {
+    const container = document.getElementById('schede-section');
+    const activeSchedaId = localStorage.getItem('active_scheda_id');
+    
+    container.innerHTML = `
+        <!-- Back Button -->
+        <button class="menu-button back-button" onclick="showMainMenu()">
+            ← Torna al Menu
+        </button>
+        
+        <!-- Titolo -->
+        <h2 style="text-align: center; margin: 20px 0; color: var(--neon-green); text-transform: uppercase; letter-spacing: 2px;">
+            📋 Gestione Schede Allenamento
+        </h2>
+        
+        <!-- Info Sistema -->
+        <div class="exercise-card" style="background: rgba(0,255,255,0.05); border-color: var(--neon-cyan);">
+            <div class="exercise-name">ℹ️ Sistema Allenamento</div>
+            <div class="exercise-details">
+                • <strong>Allenamento 1:</strong> Prima parte della scheda<br>
+                • <strong>Allenamento 2:</strong> Seconda parte della scheda<br>
+                • <strong>Allenamento 3:</strong> Combinazione leggera (-25% peso) dei primi due
+            </div>
+        </div>
+        
+        <!-- Bottone Nuova Scheda -->
+        <button class="menu-button success" onclick="app.createNewScheda()">
+            ➕ CREA NUOVA SCHEDA
+        </button>
+        
+        <!-- Lista Schede Esistenti -->
+        <div id="schede-list" style="margin-top: 30px;">
+            ${Object.entries(workouts).map(([id, scheda]) => `
+                <div class="exercise-card workout-card ${id === activeSchedaId ? 'active-scheda' : ''}" 
+                     data-scheda-id="${id}" 
+                     style="margin: 15px 0; ${id === activeSchedaId ? 'border-color: var(--neon-green); background: rgba(0,255,65,0.05);' : ''}">
+                    
+                    <div class="exercise-name" style="display: flex; justify-content: space-between; align-items: center;">
+                        <span>
+                            ${scheda.name} 
+                            ${id === activeSchedaId ? '<span style="color: var(--neon-cyan); font-size: 12px;">[ATTIVA]</span>' : ''}
+                        </span>
+                        <div style="display: flex; gap: 10px;">
+                            ${id !== activeSchedaId ? `
+                                <button onclick="app.activateScheda('${id}')" style="
+                                    padding: 5px 10px;
+                                    background: rgba(0,255,65,0.1);
+                                    border: 1px solid var(--neon-green);
+                                    color: var(--neon-green);
+                                    font-size: 11px;
+                                    cursor: pointer;
+                                    text-transform: uppercase;
+                                ">✓ Attiva</button>
+                            ` : ''}
+                            <button onclick="app.editScheda('${id}')" style="
+                                padding: 5px 10px;
+                                background: rgba(0,255,255,0.1);
+                                border: 1px solid var(--neon-cyan);
+                                color: var(--neon-cyan);
+                                font-size: 11px;
+                                cursor: pointer;
+                                text-transform: uppercase;
+                            ">✏️ Modifica</button>
+                            <button onclick="app.deleteScheda('${id}')" style="
+                                padding: 5px 10px;
+                                background: rgba(255,0,0,0.1);
+                                border: 1px solid #ff0040;
+                                color: #ff0040;
+                                font-size: 11px;
+                                cursor: pointer;
+                                text-transform: uppercase;
+                            ">🗑️ Elimina</button>
+                        </div>
+                    </div>
+                    
+                    <div class="exercise-details" style="margin: 10px 0;">
+                        ${scheda.description || 'Nessuna descrizione'}
+                    </div>
+                    
+                    <!-- Dettagli Allenamenti -->
+                    <div style="padding: 10px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1);">
+                        <details>
+                            <summary style="cursor: pointer; color: var(--neon-cyan); font-size: 12px;">
+                                ALLENAMENTO 1 (${scheda.workout1?.exercises?.length || 0} esercizi)
+                            </summary>
+                            <ul style="list-style: none; padding: 10px 0 0 20px;">
+                                ${(scheda.workout1?.exercises || []).map(ex => `
+                                    <li style="color: var(--text-white); font-size: 11px; padding: 2px 0;">
+                                        > ${ex.name} - ${ex.sets}x${ex.reps}
+                                    </li>
+                                `).join('')}
+                            </ul>
+                        </details>
+                        
+                        <details style="margin-top: 10px;">
+                            <summary style="cursor: pointer; color: var(--neon-cyan); font-size: 12px;">
+                                ALLENAMENTO 2 (${scheda.workout2?.exercises?.length || 0} esercizi)
+                            </summary>
+                            <ul style="list-style: none; padding: 10px 0 0 20px;">
+                                ${(scheda.workout2?.exercises || []).map(ex => `
+                                    <li style="color: var(--text-white); font-size: 11px; padding: 2px 0;">
+                                        > ${ex.name} - ${ex.sets}x${ex.reps}
+                                    </li>
+                                `).join('')}
+                            </ul>
+                        </details>
+
+                        <!-- Dopo il secondo details, aggiungi: -->
+<details style="margin-top: 10px;">
+    <summary style="cursor: pointer; color: var(--neon-green); font-size: 12px;">
+        ALLENAMENTO 3 - LEGGERO (${scheda.workout3?.exercises?.length || 0} esercizi)
+    </summary>
+    <ul style="list-style: none; padding: 10px 0 0 20px;">
+        ${(scheda.workout3?.exercises || []).map(ex => `
+            <li style="color: var(--text-white); font-size: 11px; padding: 2px 0;">
+                > ${ex.name} - ${ex.sets}x${ex.reps} <span style="color: var(--neon-yellow);">(-25% peso)</span>
+            </li>
+        `).join('')}
+    </ul>
+</details>
+                    </div>
+                </div>
+            `).join('')}
+        </div>
+        
+        <!-- Editor Scheda (nascosto inizialmente) -->
+        <div id="scheda-editor" style="display: none; margin-top: 30px;">
+            <!-- Verrà popolato dinamicamente -->
+        </div>
+    `;
+}
+
+/**
+ * Attiva una scheda
+ */
+activateScheda(schedaId) {
+    this.setActiveScheda(schedaId);
+    this.showSchede(); // Ricarica la vista
+}
+
+/**
+ * Crea una nuova scheda completa
+ */
+/**
+ * Crea una nuova scheda completa
+ */
+createNewScheda() {
+    console.log('➕ Creando nuova scheda...');
+    
+    const schede = this.loadCustomWorkouts();
+    const newId = Math.max(...Object.keys(schede).map(k => parseInt(k)), 0) + 1;
+    
+    const newScheda = {
+        id: newId,
+        name: `Scheda ${newId}`,
+        description: '',
+        isActive: false,
+        workout1: {
+            id: 1,
+            name: "Primo Allenamento",
+            description: "Prima parte della scheda",
+            exercises: []
+        },
+        workout2: {
+            id: 2,
+            name: "Secondo Allenamento", 
+            description: "Seconda parte della scheda",
+            exercises: []
+        },
+        workout3: {
+            id: 3,
+            name: "Terzo Allenamento - Leggero",
+            description: "Combinazione leggera con peso ridotto del 25%",
+            exercises: []
+        }
+    };
+    
+    this.showSchedaEditor(newScheda, true);
+}
+
+
+/**
+ * Modifica una scheda esistente
+ */
+editScheda(schedaId) {
+    console.log('✏️ Modificando scheda:', schedaId);
+    
+    const schede = this.loadCustomWorkouts();
+    const scheda = schede[schedaId];
+    
+    if (!scheda) {
+        this.showMessage('⌠ Scheda non trovata', 'error');
+        return;
+    }
+    
+    this.showSchedaEditor(scheda, false);
+}
+
+/**
+ * Mostra l'editor per schede complete (2 allenamenti)
+ */
+/**
+ * Mostra l'editor per schede complete (3 allenamenti)
+ */
+showSchedaEditor(scheda, isNew = false) {
+    const editorContainer = document.getElementById('scheda-editor');
+    const listContainer = document.getElementById('schede-list');
+    
+    // Nascondi lista, mostra editor
+    listContainer.style.display = 'none';
+    editorContainer.style.display = 'block';
+    
+    editorContainer.innerHTML = `
+        <div class="exercise-card" style="padding: 20px;">
+            <h3 style="color: var(--neon-green); margin-bottom: 20px; text-transform: uppercase;">
+                ${isNew ? '➕ Nuova Scheda' : '✏️ Modifica Scheda'}
+            </h3>
+            
+            <!-- Info Base Scheda -->
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; color: var(--neon-cyan); font-size: 11px; margin-bottom: 5px; text-transform: uppercase;">
+                    Nome Scheda:
+                </label>
+                <input type="text" id="scheda-name" value="${scheda.name}" style="
+                    width: 100%;
+                    padding: 10px;
+                    background: rgba(0,0,0,0.5);
+                    border: 1px solid var(--neon-green);
+                    color: var(--neon-green);
+                    font-family: var(--font-mono);
+                    font-size: 14px;
+                ">
+            </div>
+            
+            <div style="margin-bottom: 30px;">
+                <label style="display: block; color: var(--neon-cyan); font-size: 11px; margin-bottom: 5px; text-transform: uppercase;">
+                    Descrizione:
+                </label>
+                <textarea id="scheda-description" style="
+                    width: 100%;
+                    padding: 10px;
+                    background: rgba(0,0,0,0.5);
+                    border: 1px solid var(--neon-green);
+                    color: var(--neon-green);
+                    font-family: var(--font-mono);
+                    font-size: 12px;
+                    min-height: 60px;
+                    resize: vertical;
+                ">${scheda.description || ''}</textarea>
+            </div>
+            
+            <!-- ALLENAMENTO 1 -->
+            <div style="border: 1px solid var(--neon-cyan); padding: 15px; margin-bottom: 20px;">
+                <h4 style="color: var(--neon-cyan); margin-bottom: 15px;">
+                    🥇 PRIMO ALLENAMENTO
+                </h4>
+                <div id="workout1-exercises">
+                    ${(scheda.workout1?.exercises || []).map((ex, idx) => 
+                        this.renderExerciseRow(ex, 1, idx)
+                    ).join('')}
+                </div>
+                <button class="menu-button secondary" onclick="app.addExerciseToWorkout(1)" style="margin-top: 10px;">
+                    ➕ Aggiungi Esercizio
+                </button>
+            </div>
+            
+            <!-- ALLENAMENTO 2 -->
+            <div style="border: 1px solid var(--neon-cyan); padding: 15px; margin-bottom: 20px;">
+                <h4 style="color: var(--neon-cyan); margin-bottom: 15px;">
+                    🥈 SECONDO ALLENAMENTO
+                </h4>
+                <div id="workout2-exercises">
+                    ${(scheda.workout2?.exercises || []).map((ex, idx) => 
+                        this.renderExerciseRow(ex, 2, idx)
+                    ).join('')}
+                </div>
+                <button class="menu-button secondary" onclick="app.addExerciseToWorkout(2)" style="margin-top: 10px;">
+                    ➕ Aggiungi Esercizio
+                </button>
+            </div>
+            
+            <!-- ALLENAMENTO 3 -->
+            <div style="border: 1px solid var(--neon-green); padding: 15px; margin-bottom: 20px; background: rgba(0,255,65,0.02);">
+                <h4 style="color: var(--neon-green); margin-bottom: 15px;">
+                    🥉 TERZO ALLENAMENTO (Leggero -25%)
+                </h4>
+                <div style="background: rgba(255,255,0,0.05); border: 1px solid rgba(255,255,0,0.3); padding: 10px; margin-bottom: 15px;">
+                    <p style="color: var(--neon-yellow); font-size: 11px; margin: 0;">
+                        ⚠️ <strong>NOTA:</strong> Il terzo allenamento è pensato come versione leggera. 
+                        Durante l'esecuzione, i pesi suggeriti saranno automaticamente ridotti del 25% rispetto ai massimali delle sessioni precedenti.
+                    </p>
+                </div>
+                <div id="workout3-exercises">
+                    ${(scheda.workout3?.exercises || []).map((ex, idx) => 
+                        this.renderExerciseRow(ex, 3, idx)
+                    ).join('')}
+                </div>
+                <button class="menu-button secondary" onclick="app.addExerciseToWorkout(3)" style="margin-top: 10px;">
+                    ➕ Aggiungi Esercizio
+                </button>
+            </div>
+            
+            <!-- Bottoni Azione -->
+            <div style="display: flex; gap: 10px;">
+                <button class="menu-button success" onclick="app.saveScheda(${scheda.id}, ${isNew})" style="flex: 1;">
+                    💾 Salva Scheda
+                </button>
+                <button class="menu-button warning" onclick="app.cancelSchedaEdit()" style="flex: 1;">
+                    ⌠ Annulla
+                </button>
+            </div>
+        </div>
+    `;
+}
+
+/**
+ * Renderizza una riga esercizio nell'editor
+ */
+renderExerciseRow(exercise, workoutNum, index) {
+    return `
+        <div class="exercise-row" data-workout="${workoutNum}" data-index="${index}" style="
+            margin: 10px 0;
+            padding: 10px;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.1);
+        ">
+            <div style="display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 10px; align-items: center;">
+                <input type="text" 
+                    id="ex-${workoutNum}-${index}-name" 
+                    value="${exercise.name || ''}" 
+                    placeholder="Nome esercizio"
+                    style="
+                        padding: 8px;
+                        background: rgba(0,0,0,0.5);
+                        border: 1px solid rgba(0,255,255,0.3);
+                        color: var(--neon-cyan);
+                        font-family: var(--font-mono);
+                        font-size: 12px;
+                    ">
+                
+                <input type="number" 
+                    id="ex-${workoutNum}-${index}-sets" 
+                    value="${exercise.sets || 3}" 
+                    min="1" max="10"
+                    placeholder="Serie"
+                    style="
+                        padding: 8px;
+                        background: rgba(0,0,0,0.5);
+                        border: 1px solid rgba(0,255,255,0.3);
+                        color: var(--neon-green);
+                        font-family: var(--font-mono);
+                        font-size: 12px;
+                        text-align: center;
+                    ">
+                
+                <input type="text" 
+                    id="ex-${workoutNum}-${index}-reps" 
+                    value="${exercise.reps || '8-10'}" 
+                    placeholder="Reps"
+                    style="
+                        padding: 8px;
+                        background: rgba(0,0,0,0.5);
+                        border: 1px solid rgba(0,255,255,0.3);
+                        color: var(--neon-green);
+                        font-family: var(--font-mono);
+                        font-size: 12px;
+                        text-align: center;
+                    ">
+                
+                <button onclick="app.removeExerciseRow(${workoutNum}, ${index})" style="
+                    padding: 8px;
+                    background: rgba(255,0,0,0.1);
+                    border: 1px solid #ff0040;
+                    color: #ff0040;
+                    font-size: 11px;
+                    cursor: pointer;
+                ">🗑️</button>
+            </div>
+            
+            <!-- Categoria e Equipment -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
+                <select id="ex-${workoutNum}-${index}-category" style="
+                    padding: 6px;
+                    background: rgba(0,0,0,0.5);
+                    border: 1px solid rgba(0,255,255,0.3);
+                    color: var(--neon-cyan);
+                    font-family: var(--font-mono);
+                    font-size: 11px;
+                ">
+                    <option value="Petto" ${exercise.category === 'Petto' ? 'selected' : ''}>Petto</option>
+                    <option value="Dorso" ${exercise.category === 'Dorso' ? 'selected' : ''}>Dorso</option>
+                    <option value="Spalle" ${exercise.category === 'Spalle' ? 'selected' : ''}>Spalle</option>
+                    <option value="Gambe" ${exercise.category === 'Gambe' ? 'selected' : ''}>Gambe</option>
+                    <option value="Bicipiti" ${exercise.category === 'Bicipiti' ? 'selected' : ''}>Bicipiti</option>
+                    <option value="Tricipiti" ${exercise.category === 'Tricipiti' ? 'selected' : ''}>Tricipiti</option>
+                    <option value="Addominali" ${exercise.category === 'Addominali' ? 'selected' : ''}>Addominali</option>
+                </select>
+                
+                <select id="ex-${workoutNum}-${index}-equipment" style="
+                    padding: 6px;
+                    background: rgba(0,0,0,0.5);
+                    border: 1px solid rgba(0,255,255,0.3);
+                    color: var(--neon-cyan);
+                    font-family: var(--font-mono);
+                    font-size: 11px;
+                ">
+                    <option value="Bilanciere" ${exercise.equipment === 'Bilanciere' ? 'selected' : ''}>Bilanciere</option>
+                    <option value="Manubri" ${exercise.equipment === 'Manubri' ? 'selected' : ''}>Manubri</option>
+                    <option value="Macchina" ${exercise.equipment === 'Macchina' ? 'selected' : ''}>Macchina</option>
+                    <option value="Cavi" ${exercise.equipment === 'Cavi' ? 'selected' : ''}>Cavi</option>
+                    <option value="Corpo libero" ${exercise.equipment === 'Corpo libero' ? 'selected' : ''}>Corpo libero</option>
+                </select>
+            </div>
+        </div>
+    `;
+}
+
+/**
+ * Aggiunge esercizio a un workout specifico
+ */
+addExerciseToWorkout(workoutNum) {
+    const container = document.getElementById(`workout${workoutNum}-exercises`);
+    const newIndex = container.querySelectorAll('.exercise-row').length;
+    
+    const newExercise = {
+        name: '',
+        sets: 3,
+        reps: '8-10',
+        category: 'Petto',
+        equipment: 'Bilanciere'
+    };
+    
+    const div = document.createElement('div');
+    div.innerHTML = this.renderExerciseRow(newExercise, workoutNum, newIndex);
+    container.appendChild(div.firstElementChild);
+}
+
+/**
+ * Rimuove una riga esercizio
+ */
+removeExerciseRow(workoutNum, index) {
+    const row = document.querySelector(`[data-workout="${workoutNum}"][data-index="${index}"]`);
+    if (row) {
+        row.remove();
+    }
+}
+
+/**
+ * Salva la scheda completa
+ */
+/**
+ * Salva la scheda completa
+ */
+saveScheda(schedaId, isNew) {
+    console.log('💾 Salvando scheda...');
+    
+    // Raccogli dati
+    const name = document.getElementById('scheda-name')?.value || `Scheda ${schedaId}`;
+    const description = document.getElementById('scheda-description')?.value || '';
+    
+    // Raccogli esercizi per tutti e 3 gli allenamenti
+    const collectExercises = (workoutNum) => {
+        const exercises = [];
+        document.querySelectorAll(`[data-workout="${workoutNum}"]`).forEach((row, idx) => {
+            const exerciseName = document.getElementById(`ex-${workoutNum}-${idx}-name`)?.value;
+            if (exerciseName && exerciseName.trim()) {
+                exercises.push({
+                    name: exerciseName.trim(),
+                    sets: parseInt(document.getElementById(`ex-${workoutNum}-${idx}-sets`)?.value) || 3,
+                    reps: document.getElementById(`ex-${workoutNum}-${idx}-reps`)?.value || '8-10',
+                    category: document.getElementById(`ex-${workoutNum}-${idx}-category`)?.value || 'Petto',
+                    equipment: document.getElementById(`ex-${workoutNum}-${idx}-equipment`)?.value || 'Bilanciere'
+                });
+            }
+        });
+        return exercises;
+    };
+    
+    const workout1Exercises = collectExercises(1);
+    const workout2Exercises = collectExercises(2);
+    const workout3Exercises = collectExercises(3);
+    
+    // Validazione
+    if (!name.trim()) {
+        this.showMessage('⚠️ Inserisci un nome per la scheda', 'warning');
+        return;
+    }
+    
+    if (workout1Exercises.length === 0 || workout2Exercises.length === 0 || workout3Exercises.length === 0) {
+        this.showMessage('⚠️ Tutti e tre gli allenamenti devono avere almeno un esercizio', 'warning');
+        return;
+    }
+    
+    // Crea oggetto scheda
+    const scheda = {
+        id: schedaId,
+        name: name.trim(),
+        description: description.trim(),
+        isActive: false,
+        workout1: {
+            id: 1,
+            name: "Primo Allenamento",
+            description: "Prima parte della scheda",
+            exercises: workout1Exercises
+        },
+        workout2: {
+            id: 2,
+            name: "Secondo Allenamento",
+            description: "Seconda parte della scheda",
+            exercises: workout2Exercises
+        },
+        workout3: {
+            id: 3,
+            name: "Terzo Allenamento - Leggero",
+            description: "Combinazione leggera con peso ridotto del 25%",
+            exercises: workout3Exercises
+        }
+    };
+    
+    // Salva
+    const schede = this.loadCustomWorkouts();
+    schede[schedaId] = scheda;
+    
+    if (this.saveCustomWorkouts(schede)) {
+        // Se è nuova, attivala automaticamente
+        if (isNew) {
+            this.setActiveScheda(schedaId);
+        }
+        
+        this.showMessage('✅ Scheda salvata con successo!', 'success');
+        setTimeout(() => this.showSchede(), 1500);
+    } else {
+        this.showMessage('⌠ Errore nel salvataggio', 'error');
+    }
+}
+
+
+
+/**
+ * Crea una nuova scheda
+ */
+createNewWorkout() {
+    console.log('➕ Creando nuova scheda...');
+    
+    const workouts = this.loadCustomWorkouts();
+    const newId = Math.max(...Object.keys(workouts).map(k => parseInt(k))) + 1;
+    
+    const newWorkout = {
+        id: newId,
+        name: `Scheda ${newId}`,
+        description: '',
+        color: this.getRandomColor(),
+        exercises: []
+    };
+    
+    this.showWorkoutEditor(newWorkout, true);
+}
+
+/**
+ * Modifica una scheda esistente
+ */
+editWorkout(workoutId) {
+    console.log('✏️ Modificando scheda:', workoutId);
+    
+    const workouts = this.loadCustomWorkouts();
+    const workout = workouts[workoutId];
+    
+    if (!workout) {
+        this.showMessage('❌ Scheda non trovata', 'error');
+        return;
+    }
+    
+    this.showWorkoutEditor(workout, false);
+}
+
+/**
+ * Mostra l'editor per creare/modificare una scheda
+ */
+showWorkoutEditor(workout, isNew = false) {
+    const editorContainer = document.getElementById('workout-editor');
+    const listContainer = document.getElementById('workouts-list');
+    
+    // Nascondi lista, mostra editor
+    listContainer.style.display = 'none';
+    editorContainer.style.display = 'block';
+    
+    // ID temporaneo per gli esercizi
+    let exerciseIdCounter = workout.exercises.length;
+    
+    editorContainer.innerHTML = `
+        <div class="exercise-card" style="padding: 20px;">
+            <h3 style="color: var(--neon-green); margin-bottom: 20px; text-transform: uppercase;">
+                ${isNew ? '➕ Nuova Scheda' : '✏️ Modifica Scheda'}
+            </h3>
+            
+            <!-- Info Base Scheda -->
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; color: var(--neon-cyan); font-size: 11px; margin-bottom: 5px; text-transform: uppercase;">
+                    Nome Scheda:
+                </label>
+                <input type="text" id="workout-name" value="${workout.name}" style="
+                    width: 100%;
+                    padding: 10px;
+                    background: rgba(0,0,0,0.5);
+                    border: 1px solid var(--neon-green);
+                    color: var(--neon-green);
+                    font-family: var(--font-mono);
+                    font-size: 14px;
+                ">
+            </div>
+            
+            <div style="margin-bottom: 30px;">
+                <label style="display: block; color: var(--neon-cyan); font-size: 11px; margin-bottom: 5px; text-transform: uppercase;">
+                    Descrizione:
+                </label>
+                <textarea id="workout-description" style="
+                    width: 100%;
+                    padding: 10px;
+                    background: rgba(0,0,0,0.5);
+                    border: 1px solid var(--neon-green);
+                    color: var(--neon-green);
+                    font-family: var(--font-mono);
+                    font-size: 12px;
+                    min-height: 60px;
+                    resize: vertical;
+                ">${workout.description || ''}</textarea>
+            </div>
+            
+            <!-- Lista Esercizi -->
+            <div style="border-top: 1px solid rgba(0,255,255,0.3); padding-top: 20px;">
+                <h4 style="color: var(--neon-cyan); margin-bottom: 15px; text-transform: uppercase; font-size: 14px;">
+                    Esercizi della Scheda:
+                </h4>
+                
+                <div id="exercises-list">
+                    ${workout.exercises.map((ex, idx) => this.renderExerciseEditor(ex, idx)).join('')}
+                </div>
+                
+                <!-- Bottone Aggiungi Esercizio -->
+                <button class="menu-button secondary" onclick="app.addExerciseToEditor()" style="margin-top: 15px;">
+                    ➕ Aggiungi Esercizio
+                </button>
+            </div>
+            
+            <!-- Bottoni Azione -->
+            <div style="display: flex; gap: 10px; margin-top: 30px;">
+                <button class="menu-button success" onclick="app.saveWorkout(${workout.id}, ${isNew})" style="flex: 1;">
+                    💾 Salva Scheda
+                </button>
+                <button class="menu-button warning" onclick="app.cancelWorkoutEdit()" style="flex: 1;">
+                    ❌ Annulla
+                </button>
+            </div>
+        </div>
+    `;
+    
+    // Inizializza counter per nuovi esercizi
+    this.exerciseCounter = exerciseIdCounter;
+}
+
+/**
+ * Renderizza un singolo esercizio nell'editor
+ */
+renderExerciseEditor(exercise, index) {
+    return `
+        <div class="exercise-editor-item" data-exercise-index="${index}" style="
+            margin: 10px 0;
+            padding: 15px;
+            background: rgba(0,255,65,0.02);
+            border: 1px solid rgba(0,255,65,0.2);
+        ">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <span style="color: var(--neon-green); font-weight: bold;">Esercizio #${index + 1}</span>
+                <button onclick="app.removeExercise(${index})" style="
+                    padding: 5px 10px;
+                    background: rgba(255,0,0,0.1);
+                    border: 1px solid #ff0040;
+                    color: #ff0040;
+                    font-size: 11px;
+                    cursor: pointer;
+                ">🗑️ Rimuovi</button>
+            </div>
+            
+            <!-- Nome Esercizio -->
+            <div style="margin-bottom: 10px;">
+                <input type="text" 
+                    id="exercise-name-${index}" 
+                    value="${exercise.name || ''}" 
+                    placeholder="Nome esercizio (es. Panca Piana)"
+                    style="
+                        width: 100%;
+                        padding: 8px;
+                        background: rgba(0,0,0,0.5);
+                        border: 1px solid rgba(0,255,255,0.3);
+                        color: var(--neon-cyan);
+                        font-family: var(--font-mono);
+                        font-size: 12px;
+                    ">
+            </div>
+            
+            <!-- Categoria e Equipment -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+                <div>
+                    <label style="display: block; color: var(--text-muted); font-size: 10px; margin-bottom: 3px;">
+                        CATEGORIA:
+                    </label>
+                    <select id="exercise-category-${index}" style="
+                        width: 100%;
+                        padding: 6px;
+                        background: rgba(0,0,0,0.5);
+                        border: 1px solid rgba(0,255,255,0.3);
+                        color: var(--neon-cyan);
+                        font-family: var(--font-mono);
+                        font-size: 11px;
+                    ">
+                        <option value="Petto" ${exercise.category === 'Petto' ? 'selected' : ''}>Petto</option>
+                        <option value="Dorso" ${exercise.category === 'Dorso' ? 'selected' : ''}>Dorso</option>
+                        <option value="Spalle" ${exercise.category === 'Spalle' ? 'selected' : ''}>Spalle</option>
+                        <option value="Gambe" ${exercise.category === 'Gambe' ? 'selected' : ''}>Gambe</option>
+                        <option value="Bicipiti" ${exercise.category === 'Bicipiti' ? 'selected' : ''}>Bicipiti</option>
+                        <option value="Tricipiti" ${exercise.category === 'Tricipiti' ? 'selected' : ''}>Tricipiti</option>
+                        <option value="Addominali" ${exercise.category === 'Addominali' ? 'selected' : ''}>Addominali</option>
+                        <option value="Cardio" ${exercise.category === 'Cardio' ? 'selected' : ''}>Cardio</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label style="display: block; color: var(--text-muted); font-size: 10px; margin-bottom: 3px;">
+                        ATTREZZATURA:
+                    </label>
+                    <select id="exercise-equipment-${index}" style="
+                        width: 100%;
+                        padding: 6px;
+                        background: rgba(0,0,0,0.5);
+                        border: 1px solid rgba(0,255,255,0.3);
+                        color: var(--neon-cyan);
+                        font-family: var(--font-mono);
+                        font-size: 11px;
+                    ">
+                        <option value="Bilanciere" ${exercise.equipment === 'Bilanciere' ? 'selected' : ''}>Bilanciere</option>
+                        <option value="Manubri" ${exercise.equipment === 'Manubri' ? 'selected' : ''}>Manubri</option>
+                        <option value="Macchina" ${exercise.equipment === 'Macchina' ? 'selected' : ''}>Macchina</option>
+                        <option value="Cavi" ${exercise.equipment === 'Cavi' ? 'selected' : ''}>Cavi</option>
+                        <option value="Corpo libero" ${exercise.equipment === 'Corpo libero' ? 'selected' : ''}>Corpo libero</option>
+                        <option value="Kettlebell" ${exercise.equipment === 'Kettlebell' ? 'selected' : ''}>Kettlebell</option>
+                        <option value="Elastici" ${exercise.equipment === 'Elastici' ? 'selected' : ''}>Elastici</option>
+                        <option value="Altro" ${exercise.equipment === 'Altro' ? 'selected' : ''}>Altro</option>
+                    </select>
+                </div>
+            </div>
+            
+            <!-- Serie e Ripetizioni -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <div>
+                    <label style="display: block; color: var(--text-muted); font-size: 10px; margin-bottom: 3px;">
+                        NUMERO SERIE:
+                    </label>
+                    <input type="number" 
+                        id="exercise-sets-${index}" 
+                        value="${exercise.sets || 3}" 
+                        min="1" max="10"
+                        style="
+                            width: 100%;
+                            padding: 6px;
+                            background: rgba(0,0,0,0.5);
+                            border: 1px solid rgba(0,255,255,0.3);
+                            color: var(--neon-green);
+                            font-family: var(--font-mono);
+                            font-size: 12px;
+                            text-align: center;
+                        ">
+                </div>
+                
+                <div>
+                    <label style="display: block; color: var(--text-muted); font-size: 10px; margin-bottom: 3px;">
+                        RIPETIZIONI:
+                    </label>
+                    <input type="text" 
+                        id="exercise-reps-${index}" 
+                        value="${exercise.reps || '8-10'}" 
+                        placeholder="es. 8-10 o 12"
+                        style="
+                            width: 100%;
+                            padding: 6px;
+                            background: rgba(0,0,0,0.5);
+                            border: 1px solid rgba(0,255,255,0.3);
+                            color: var(--neon-green);
+                            font-family: var(--font-mono);
+                            font-size: 12px;
+                            text-align: center;
+                        ">
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+/**
+ * Aggiunge un nuovo esercizio all'editor
+ */
+addExerciseToEditor() {
+    const exercisesList = document.getElementById('exercises-list');
+    if (!exercisesList) return;
+    
+    const newIndex = document.querySelectorAll('.exercise-editor-item').length;
+    
+    const newExercise = {
+        name: '',
+        sets: 3,
+        reps: '8-10',
+        category: 'Petto',
+        equipment: 'Bilanciere'
+    };
+    
+    const exerciseHtml = this.renderExerciseEditor(newExercise, newIndex);
+    
+    // Aggiungi al DOM
+    const div = document.createElement('div');
+    div.innerHTML = exerciseHtml;
+    exercisesList.appendChild(div.firstElementChild);
+    
+    // Scrolla al nuovo esercizio
+    div.firstElementChild.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    
+    // Focus sul campo nome
+    setTimeout(() => {
+        document.getElementById(`exercise-name-${newIndex}`)?.focus();
+    }, 100);
+}
+
+/**
+ * Rimuove un esercizio dall'editor
+ */
+removeExercise(index) {
+    const exerciseElement = document.querySelector(`[data-exercise-index="${index}"]`);
+    if (exerciseElement) {
+        exerciseElement.style.animation = 'fadeOut 0.3s ease';
+        setTimeout(() => {
+            exerciseElement.remove();
+            // Rinumera gli esercizi rimanenti
+            this.renumberExercises();
+        }, 300);
+    }
+}
+
+/**
+ * Rinumera gli esercizi dopo una rimozione
+ */
+renumberExercises() {
+    const exercises = document.querySelectorAll('.exercise-editor-item');
+    exercises.forEach((el, idx) => {
+        el.dataset.exerciseIndex = idx;
+        el.querySelector('span').textContent = `Esercizio #${idx + 1}`;
+    });
+}
+
+/**
+ * Salva la scheda
+ */
+saveWorkout(workoutId, isNew) {
+    console.log('💾 Salvando scheda...');
+    
+    // Raccogli dati dalla form
+    const name = document.getElementById('workout-name')?.value || `Scheda ${workoutId}`;
+    const description = document.getElementById('workout-description')?.value || '';
+    
+    // Raccogli esercizi
+    const exercises = [];
+    const exerciseElements = document.querySelectorAll('.exercise-editor-item');
+    
+    exerciseElements.forEach((el, idx) => {
+        const exerciseName = document.getElementById(`exercise-name-${idx}`)?.value;
+        
+        if (exerciseName && exerciseName.trim()) {
+            exercises.push({
+                name: exerciseName.trim(),
+                sets: parseInt(document.getElementById(`exercise-sets-${idx}`)?.value) || 3,
+                reps: document.getElementById(`exercise-reps-${idx}`)?.value || '8-10',
+                category: document.getElementById(`exercise-category-${idx}`)?.value || 'Petto',
+                equipment: document.getElementById(`exercise-equipment-${idx}`)?.value || 'Bilanciere'
+            });
+        }
+    });
+    
+    // Validazione
+    if (!name.trim()) {
+        this.showMessage('⚠️ Inserisci un nome per la scheda', 'warning');
+        return;
+    }
+    
+    if (exercises.length === 0) {
+        this.showMessage('⚠️ Aggiungi almeno un esercizio', 'warning');
+        return;
+    }
+    
+    // Crea oggetto workout
+    const workout = {
+        id: workoutId,
+        name: name.trim(),
+        description: description.trim(),
+        color: this.getRandomColor(),
+        exercises: exercises
+    };
+    
+    // Salva
+    const workouts = this.loadCustomWorkouts();
+    workouts[workoutId] = workout;
+    
+    if (this.saveCustomWorkouts(workouts)) {
+        this.showMessage('✅ Scheda salvata con successo!', 'success');
+        // Torna alla lista
+        setTimeout(() => this.showSchede(), 1500);
+    } else {
+        this.showMessage('❌ Errore nel salvataggio', 'error');
+    }
+}
+
+/**
+ * Annulla la modifica/creazione
+ */
+cancelWorkoutEdit() {
+    if (confirm('⚠️ Vuoi davvero annullare? Le modifiche non salvate andranno perse.')) {
+        this.showSchede();
+    }
+}
+
+/**
+ * Elimina una scheda
+ */
+deleteWorkout(workoutId) {
+    if (!confirm(`⚠️ Vuoi davvero eliminare questa scheda?\n\nQuesta azione non può essere annullata.`)) {
+        return;
+    }
+    
+    const workouts = this.loadCustomWorkouts();
+    
+    // Non permettere di eliminare tutte le schede
+    if (Object.keys(workouts).length <= 1) {
+        this.showMessage('⚠️ Devi avere almeno una scheda', 'warning');
+        return;
+    }
+    
+    delete workouts[workoutId];
+    
+    // Riassegna gli ID se necessario
+    const newWorkouts = {};
+    let newId = 1;
+    Object.values(workouts).forEach(workout => {
+        newWorkouts[newId] = { ...workout, id: newId };
+        newId++;
+    });
+    
+    if (this.saveCustomWorkouts(newWorkouts)) {
+        this.showMessage('✅ Scheda eliminata', 'success');
+        this.showSchede();
+    } else {
+        this.showMessage('❌ Errore nell\'eliminazione', 'error');
+    }
+}
+
+/**
+ * Genera un colore casuale per le schede
+ */
+getRandomColor() {
+    const colors = [
+        '#74b9ff', '#a29bfe', '#00b894', '#fdcb6e', 
+        '#e17055', '#fd79a8', '#00cec9', '#6c5ce7'
+    ];
+    return colors[Math.floor(Math.random() * colors.length)];
+}
+
+/**
+ * Esporta una scheda in formato JSON
+ */
+exportWorkout(workoutId) {
+    const workouts = this.loadCustomWorkouts();
+    const workout = workouts[workoutId];
+    
+    if (!workout) return;
+    
+    const dataStr = JSON.stringify(workout, null, 2);
+    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+    
+    const exportName = `scheda_${workout.name.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.json`;
+    
+    const linkElement = document.createElement('a');
+    linkElement.setAttribute('href', dataUri);
+    linkElement.setAttribute('download', exportName);
+    linkElement.click();
+    
+    this.showMessage('✅ Scheda esportata', 'success');
+}
+
+/**
+ * Importa una scheda da file JSON
+ */
+importWorkout(file) {
+    const reader = new FileReader();
+    
+    reader.onload = (e) => {
+        try {
+            const workout = JSON.parse(e.target.result);
+            
+            // Validazione base
+            if (!workout.name || !workout.exercises || !Array.isArray(workout.exercises)) {
+                throw new Error('Formato file non valido');
+            }
+            
+            // Aggiungi alla lista
+            const workouts = this.loadCustomWorkouts();
+            const newId = Math.max(...Object.keys(workouts).map(k => parseInt(k))) + 1;
+            workout.id = newId;
+            workouts[newId] = workout;
+            
+            if (this.saveCustomWorkouts(workouts)) {
+                this.showMessage('✅ Scheda importata con successo', 'success');
+                this.showSchede();
+            }
+            
+        } catch (err) {
+            console.error('Errore importazione:', err);
+            this.showMessage('❌ Errore nell\'importazione del file', 'error');
+        }
+    };
+    
+    reader.readAsText(file);
+}
+
     /* ============================
        GESTIONE ALLENAMENTI
     ============================ */
@@ -610,33 +1719,85 @@ renderEmptyStats() {
      * Inizia una nuova sessione di allenamento
      */
     startWorkout(workoutNumber) {
-        console.log(`🏋️ Iniziando allenamento ${workoutNumber}`);
+    console.log(`🏋️ Iniziando allenamento ${workoutNumber}`);
+    
+    this.currentWorkout = workoutNumber;
+    
+    // Carica schede personalizzate (con supporto scheda attiva)
+    const customWorkouts = this.loadCustomWorkouts();
+    const activeScheda = this.getActiveScheda();
+    
+    let template;
+    
+    if (activeScheda) {
+        // Usa la scheda attiva - tutti e 3 gli allenamenti sono definiti manualmente
+        template = activeScheda[`workout${workoutNumber}`];
         
-        this.currentWorkout = workoutNumber;
-        const template = WORKOUT_TEMPLATES[workoutNumber];
-        
-        if (!template) {
-            this.showMessage('❌ Scheda non trovata', 'error');
-            return;
+        // Se è il terzo allenamento, imposta il flag per riduzione peso
+        if (workoutNumber === 3) {
+            this.isLightWorkout = true;
+            this.weightReductionFactor = 0.75; // Riduzione del 25%
+        } else {
+            this.isLightWorkout = false;
+            this.weightReductionFactor = 1;
         }
-
-        this.hideAllSections();
-        document.getElementById('workout-session').style.display = 'block';
-        document.getElementById('workout-title').textContent = template.name;
-        this.updateCurrentDate();
-        
-        // Inizializza dati workout
-        this.currentWorkoutData = {
-            workoutNumber,
-            workoutName: template.name,
-            date: new Date().toISOString().split('T')[0],
-            timestamp: new Date().toISOString(),
-            exercises: {}
-        };
-        
-        this.renderExercises(template.exercises);
-        this.loadLastSessionData(workoutNumber);
+    } else {
+        // Fallback sui template default
+        template = WORKOUT_TEMPLATES[workoutNumber];
     }
+    
+    if (!template) {
+        this.showMessage('⌠ Scheda non trovata', 'error');
+        return;
+    }
+
+    this.hideAllSections();
+    document.getElementById('workout-session').style.display = 'block';
+    document.getElementById('workout-title').textContent = template.name;
+    this.updateCurrentDate();
+    
+    // Inizializza dati workout
+    this.currentWorkoutData = {
+        workoutNumber,
+        workoutName: template.name,
+        date: new Date().toISOString().split('T')[0],
+        timestamp: new Date().toISOString(),
+        exercises: {}
+    };
+    
+    this.renderExercises(template.exercises);
+    this.loadLastSessionData(workoutNumber);
+    
+    // Se è il terzo allenamento, mostra avviso riduzione peso
+    if (workoutNumber === 3) {
+        this.showMessage('💡 Allenamento leggero: suggerimenti peso -25%', 'info', 3000);
+    }
+}
+
+/**
+ * Ottiene la scheda attualmente attiva
+ */
+getActiveScheda() {
+    try {
+        const activeId = localStorage.getItem('active_scheda_id');
+        if (!activeId) return null;
+        
+        const customWorkouts = this.loadCustomWorkouts();
+        return customWorkouts[activeId] || null;
+    } catch (err) {
+        console.error('Errore caricamento scheda attiva:', err);
+        return null;
+    }
+}
+
+/**
+ * Imposta una scheda come attiva
+ */
+setActiveScheda(schedaId) {
+    localStorage.setItem('active_scheda_id', schedaId);
+    this.showMessage('✅ Scheda attivata!', 'success');
+}
+
 
     /**
      * Renderizza gli esercizi nel DOM
@@ -698,7 +1859,49 @@ renderEmptyStats() {
         
         // Aggiorna summary dell'esercizio
         this.updateExerciseSummary(exerciseIdx, exerciseName);
+
+        // Se è il terzo allenamento, applica automaticamente la riduzione del 25%
+    if (this.currentWorkout === 3) {
+        const weight = parseFloat(input.value) || 0;
+        if (weight > 0) {
+            // Recupera il peso massimo dai primi due allenamenti per questo esercizio
+            const lastWeight1 = this.getLastWeight(exerciseName, 1);
+            const lastWeight2 = this.getLastWeight(exerciseName, 2);
+            const maxPreviousWeight = Math.max(lastWeight1, lastWeight2);
+            
+            if (maxPreviousWeight > 0 && weight > maxPreviousWeight * 0.75) {
+                // Suggerisci il peso ridotto
+                const suggestedWeight = (maxPreviousWeight * 0.75).toFixed(1);
+                input.value = suggestedWeight;
+                this.showMessage(`💡 Peso suggerito: ${suggestedWeight}kg (-25%)`, 'info', 2000);
+            }
+        }
     }
+    }
+
+    /**
+ * Recupera l'ultimo peso usato per un esercizio in un allenamento specifico
+ */
+getLastWeight(exerciseName, workoutNumber) {
+    try {
+        const lastData = localStorage.getItem(`last_workout_${workoutNumber}`);
+        if (lastData) {
+            const parsed = JSON.parse(lastData);
+            const exercise = parsed.exercises?.[exerciseName];
+            if (exercise && exercise.sets) {
+                // Trova il peso massimo usato nell'ultima sessione
+                return exercise.sets.reduce((max, set) => 
+                    Math.max(max, set.weight || 0), 0
+                );
+            }
+        }
+    } catch (err) {
+        console.error('Errore recupero peso precedente:', err);
+    }
+    return 0;
+}
+
+
 
     /**
      * Aggiorna il riepilogo dell'esercizio
@@ -760,6 +1963,18 @@ renderEmptyStats() {
         } catch (err) {
             console.error('Errore caricamento ultima sessione:', err);
         }
+
+        // Se è il terzo allenamento, suggerisci pesi ridotti
+if (this.currentWorkout === 3) {
+    document.querySelectorAll('.set-input').forEach(input => {
+        if (input.value) {
+            const currentWeight = parseFloat(input.value);
+            const suggestedWeight = (currentWeight * 0.75).toFixed(1);
+            input.placeholder = `Sugg: ${suggestedWeight}kg`;
+            input.style.borderColor = 'var(--neon-yellow)';
+        }
+    });
+}
     }
 
     /**
