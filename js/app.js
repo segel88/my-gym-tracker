@@ -379,19 +379,19 @@ createExerciseChart(canvasId, data, type = 'weight') {
         case 'volume':
             dataset = data.volumes;
             label = 'Volume Totale';
-            color = 'var(--neon-cyan)';
+            color = '#00ffff'; // Cyan neon
             bgColor = 'rgba(0, 255, 255, 0.1)';
             break;
         case 'average':
             dataset = data.avgWeights;
             label = 'Peso Medio';
-            color = 'var(--neon-yellow)';
+            color = '#ffff00'; // Yellow neon
             bgColor = 'rgba(255, 255, 0, 0.1)';
             break;
         default: // weight
             dataset = data.maxWeights;
             label = 'Peso Massimo (kg)';
-            color = 'var(--neon-green)';
+            color = '#00ff41'; // Green neon
             bgColor = 'rgba(0, 255, 65, 0.1)';
     }
     
@@ -400,23 +400,31 @@ createExerciseChart(canvasId, data, type = 'weight') {
     const labels = data.dates.slice(-limit);
     const values = dataset.slice(-limit);
     
+    // Se c'è un solo punto, aggiungi un punto fittizio per mostrare meglio
+    const displayLabels = labels.length === 1 ? ['', ...labels, ''] : labels;
+    const displayValues = values.length === 1 ? [null, ...values, null] : values;
+    
     // Crea il grafico
     canvas.chart = new Chart(ctx, {
         type: 'line',
         data: {
-            labels: labels,
+            labels: displayLabels,
             datasets: [{
                 label: label,
-                data: values,
+                data: displayValues,
                 borderColor: color,
                 backgroundColor: bgColor,
                 borderWidth: 2,
                 tension: 0.3,
                 fill: true,
-                pointRadius: 4,
+                pointRadius: 6,
                 pointBackgroundColor: color,
-                pointBorderColor: color,
-                pointHoverRadius: 6
+                pointBorderColor: '#0a0e1b', // Colore sfondo per contrasto
+                pointBorderWidth: 2,
+                pointHoverRadius: 8,
+                pointHoverBackgroundColor: color,
+                pointHoverBorderColor: '#ffffff',
+                pointHoverBorderWidth: 2
             }]
         },
         options: {
@@ -427,15 +435,27 @@ createExerciseChart(canvasId, data, type = 'weight') {
                     display: false
                 },
                 tooltip: {
-                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                    titleColor: 'var(--neon-cyan)',
-                    bodyColor: 'var(--neon-green)',
-                    borderColor: 'var(--neon-green)',
+                    backgroundColor: 'rgba(0, 0, 0, 0.9)',
+                    titleColor: '#00ffff',
+                    bodyColor: '#00ff41',
+                    borderColor: color,
                     borderWidth: 1,
                     displayColors: false,
+                    padding: 12,
+                    cornerRadius: 0,
+                    titleFont: {
+                        family: 'JetBrains Mono',
+                        size: 11
+                    },
+                    bodyFont: {
+                        family: 'JetBrains Mono',
+                        size: 13,
+                        weight: 'bold'
+                    },
                     callbacks: {
                         label: function(context) {
                             const value = context.parsed.y;
+                            if (value === null) return '';
                             if (type === 'volume') {
                                 return `Volume: ${value.toFixed(0)} kg`;
                             }
@@ -451,8 +471,9 @@ createExerciseChart(canvasId, data, type = 'weight') {
                         borderColor: 'rgba(0, 255, 255, 0.3)'
                     },
                     ticks: {
-                        color: 'var(--text-muted)',
+                        color: '#8892b0',
                         font: {
+                            family: 'JetBrains Mono',
                             size: 10
                         }
                     }
@@ -464,11 +485,13 @@ createExerciseChart(canvasId, data, type = 'weight') {
                         borderColor: 'rgba(0, 255, 65, 0.3)'
                     },
                     ticks: {
-                        color: 'var(--text-muted)',
+                        color: '#8892b0',
                         font: {
+                            family: 'JetBrains Mono',
                             size: 10
                         },
                         callback: function(value) {
+                            if (value === null) return '';
                             return value.toFixed(0);
                         }
                     }
@@ -641,30 +664,49 @@ loadCustomWorkouts() {
     try {
         const saved = localStorage.getItem('custom_schede');
         if (saved) {
-            return JSON.parse(saved);
+            const schede = JSON.parse(saved);
+            console.log('Schede caricate dal localStorage:', schede);
+            return schede;
         }
     } catch (err) {
         console.error('Errore caricamento schede:', err);
     }
     
-    // Crea scheda default con struttura corretta
-    const defaultScheda = {
+    console.log('Nessuna scheda salvata, creo default vuota');
+    
+    // NON usare più WORKOUT_TEMPLATES, crea scheda vuota
+    const emptyScheda = {
         1: {
             id: 1,
-            name: "Scheda Default",
-            description: "Scheda di base a 3 allenamenti",
+            name: "Nuova Scheda",
+            description: "Configura i tuoi allenamenti",
             isActive: true,
-            workout1: WORKOUT_TEMPLATES[1],
-            workout2: WORKOUT_TEMPLATES[2],
-            // workout3 viene generato automaticamente
+            workout1: {
+                id: 1,
+                name: "Primo Allenamento",
+                description: "Da configurare",
+                exercises: []
+            },
+            workout2: {
+                id: 2,
+                name: "Secondo Allenamento",
+                description: "Da configurare",
+                exercises: []
+            },
+            workout3: {
+                id: 3,
+                name: "Terzo Allenamento - Leggero",
+                description: "Generato automaticamente",
+                exercises: []
+            }
         }
     };
     
-    // Salva e attiva la scheda default
-    this.saveCustomWorkouts(defaultScheda);
+    // Salva e attiva la scheda vuota
+    this.saveCustomWorkouts(emptyScheda);
     localStorage.setItem('active_scheda_id', '1');
     
-    return defaultScheda;
+    return emptyScheda;
 }
 
 /**
@@ -882,9 +924,6 @@ editScheda(schedaId) {
 }
 
 /**
- * Mostra l'editor per schede complete (2 allenamenti)
- */
-/**
  * Mostra l'editor per schede complete (3 allenamenti)
  */
 showSchedaEditor(scheda, isNew = false) {
@@ -938,6 +977,9 @@ showSchedaEditor(scheda, isNew = false) {
             <div style="border: 1px solid var(--neon-cyan); padding: 15px; margin-bottom: 20px;">
                 <h4 style="color: var(--neon-cyan); margin-bottom: 15px;">
                     🥇 PRIMO ALLENAMENTO
+                    <span style="font-size: 11px; color: var(--text-muted); float: right;">
+                        ✓ = includi nel terzo
+                    </span>
                 </h4>
                 <div id="workout1-exercises">
                     ${(scheda.workout1?.exercises || []).map((ex, idx) => 
@@ -953,6 +995,9 @@ showSchedaEditor(scheda, isNew = false) {
             <div style="border: 1px solid var(--neon-cyan); padding: 15px; margin-bottom: 20px;">
                 <h4 style="color: var(--neon-cyan); margin-bottom: 15px;">
                     🥈 SECONDO ALLENAMENTO
+                    <span style="font-size: 11px; color: var(--text-muted); float: right;">
+                        ✓ = includi nel terzo
+                    </span>
                 </h4>
                 <div id="workout2-exercises">
                     ${(scheda.workout2?.exercises || []).map((ex, idx) => 
@@ -964,24 +1009,23 @@ showSchedaEditor(scheda, isNew = false) {
                 </button>
             </div>
             
-            <!-- ALLENAMENTO 3 -->
-            <div style="border: 1px solid var(--neon-green); padding: 15px; margin-bottom: 20px; background: rgba(0,255,65,0.02);">
+            <!-- PREVIEW ALLENAMENTO 3 -->
+            <div style="border: 2px solid var(--neon-green); padding: 15px; margin-bottom: 20px; background: rgba(0,255,65,0.02);">
                 <h4 style="color: var(--neon-green); margin-bottom: 15px;">
-                    🥉 TERZO ALLENAMENTO (Leggero -25%)
+                    🥉 TERZO ALLENAMENTO - ANTEPRIMA (Generato Automaticamente)
                 </h4>
                 <div style="background: rgba(255,255,0,0.05); border: 1px solid rgba(255,255,0,0.3); padding: 10px; margin-bottom: 15px;">
                     <p style="color: var(--neon-yellow); font-size: 11px; margin: 0;">
-                        ⚠️ <strong>NOTA:</strong> Il terzo allenamento è pensato come versione leggera. 
-                        Durante l'esecuzione, i pesi suggeriti saranno automaticamente ridotti del 25% rispetto ai massimali delle sessioni precedenti.
+                        ⚠️ Il terzo allenamento viene generato automaticamente dagli esercizi selezionati (✓) del primo e secondo allenamento.
+                        L'ordine sarà: prima tutti gli esercizi spuntati del primo, poi quelli del secondo. 
+                        I pesi suggeriti saranno ridotti del 25%.
                     </p>
                 </div>
-                <div id="workout3-exercises">
-                    ${(scheda.workout3?.exercises || []).map((ex, idx) => 
-                        this.renderExerciseRow(ex, 3, idx)
-                    ).join('')}
+                <div id="workout3-preview" style="padding: 10px; background: rgba(0,0,0,0.3);">
+                    <!-- Preview generata dinamicamente -->
                 </div>
-                <button class="menu-button secondary" onclick="app.addExerciseToWorkout(3)" style="margin-top: 10px;">
-                    ➕ Aggiungi Esercizio
+                <button class="menu-button secondary" onclick="app.updateWorkout3Preview()" style="margin-top: 10px;">
+                    🔄 Aggiorna Anteprima
                 </button>
             </div>
             
@@ -991,17 +1035,80 @@ showSchedaEditor(scheda, isNew = false) {
                     💾 Salva Scheda
                 </button>
                 <button class="menu-button warning" onclick="app.cancelSchedaEdit()" style="flex: 1;">
-                    ⌠ Annulla
+                    ❌ Annulla
                 </button>
             </div>
         </div>
     `;
+    
+    // Aggiungi listener per aggiornare preview quando cambiano le checkbox
+    setTimeout(() => {
+        document.querySelectorAll('.exercise-checkbox').forEach(cb => {
+            cb.addEventListener('change', () => this.updateWorkout3Preview());
+        });
+        this.updateWorkout3Preview();
+    }, 100);
+}
+
+/**
+ * Aggiorna la preview del terzo allenamento
+ */
+updateWorkout3Preview() {
+    const preview = document.getElementById('workout3-preview');
+    if (!preview) return;
+    
+    const selectedExercises = [];
+    
+    // Raccogli esercizi selezionati dal primo allenamento
+    document.querySelectorAll('#workout1-exercises .exercise-checkbox:checked').forEach(cb => {
+        const row = cb.closest('.exercise-row');
+        const index = row.dataset.index;
+        const name = document.getElementById(`ex-1-${index}-name`)?.value;
+        if (name) {
+            selectedExercises.push({
+                name: name,
+                from: 'Allenamento 1'
+            });
+        }
+    });
+    
+    // Raccogli esercizi selezionati dal secondo allenamento
+    document.querySelectorAll('#workout2-exercises .exercise-checkbox:checked').forEach(cb => {
+        const row = cb.closest('.exercise-row');
+        const index = row.dataset.index;
+        const name = document.getElementById(`ex-2-${index}-name`)?.value;
+        if (name) {
+            selectedExercises.push({
+                name: name,
+                from: 'Allenamento 2'
+            });
+        }
+    });
+    
+    if (selectedExercises.length === 0) {
+        preview.innerHTML = '<p style="color: var(--text-muted); text-align: center;">Nessun esercizio selezionato</p>';
+    } else {
+        preview.innerHTML = `
+            <ol style="list-style: none; padding: 0;">
+                ${selectedExercises.map((ex, i) => `
+                    <li style="padding: 5px 0; color: var(--text-white); font-size: 12px;">
+                        ${i + 1}. ${ex.name} 
+                        <span style="color: var(--text-muted); font-size: 10px;">(da ${ex.from})</span>
+                        <span style="color: var(--neon-yellow); font-size: 10px;">-25% peso</span>
+                    </li>
+                `).join('')}
+            </ol>
+        `;
+    }
 }
 
 /**
  * Renderizza una riga esercizio nell'editor
  */
 renderExerciseRow(exercise, workoutNum, index) {
+    // Aggiungi checkbox solo per workout 1 e 2
+    const showCheckbox = workoutNum <= 2;
+    
     return `
         <div class="exercise-row" data-workout="${workoutNum}" data-index="${index}" style="
             margin: 10px 0;
@@ -1009,12 +1116,30 @@ renderExerciseRow(exercise, workoutNum, index) {
             background: rgba(0,0,0,0.3);
             border: 1px solid rgba(255,255,255,0.1);
         ">
-            <div style="display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 10px; align-items: center;">
+            <!-- Prima riga: checkbox + nome + elimina -->
+            <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 10px;">
+                ${showCheckbox ? `
+                    <input type="checkbox" 
+                        id="ex-${workoutNum}-${index}-check" 
+                        data-workout="${workoutNum}"
+                        data-index="${index}"
+                        class="exercise-checkbox"
+                        ${exercise.includeInThird ? 'checked' : ''}
+                        style="
+                            width: 20px;
+                            height: 20px;
+                            cursor: pointer;
+                            accent-color: var(--neon-green);
+                        "
+                        title="Includi nel terzo allenamento">
+                ` : '<div style="width: 20px;"></div>'}
+                
                 <input type="text" 
                     id="ex-${workoutNum}-${index}-name" 
                     value="${exercise.name || ''}" 
                     placeholder="Nome esercizio"
                     style="
+                        flex: 1;
                         padding: 8px;
                         background: rgba(0,0,0,0.5);
                         border: 1px solid rgba(0,255,255,0.3);
@@ -1023,47 +1148,58 @@ renderExerciseRow(exercise, workoutNum, index) {
                         font-size: 12px;
                     ">
                 
-                <input type="number" 
-                    id="ex-${workoutNum}-${index}-sets" 
-                    value="${exercise.sets || 3}" 
-                    min="1" max="10"
-                    placeholder="Serie"
-                    style="
-                        padding: 8px;
-                        background: rgba(0,0,0,0.5);
-                        border: 1px solid rgba(0,255,255,0.3);
-                        color: var(--neon-green);
-                        font-family: var(--font-mono);
-                        font-size: 12px;
-                        text-align: center;
-                    ">
-                
-                <input type="text" 
-                    id="ex-${workoutNum}-${index}-reps" 
-                    value="${exercise.reps || '8-10'}" 
-                    placeholder="Reps"
-                    style="
-                        padding: 8px;
-                        background: rgba(0,0,0,0.5);
-                        border: 1px solid rgba(0,255,255,0.3);
-                        color: var(--neon-green);
-                        font-family: var(--font-mono);
-                        font-size: 12px;
-                        text-align: center;
-                    ">
-                
                 <button onclick="app.removeExerciseRow(${workoutNum}, ${index})" style="
-                    padding: 8px;
+                    padding: 8px 12px;
                     background: rgba(255,0,0,0.1);
                     border: 1px solid #ff0040;
                     color: #ff0040;
                     font-size: 11px;
                     cursor: pointer;
+                    white-space: nowrap;
                 ">🗑️</button>
             </div>
             
-            <!-- Categoria e Equipment -->
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
+            <!-- Seconda riga: serie + reps -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+                <div>
+                    <label style="color: var(--text-muted); font-size: 10px;">SERIE:</label>
+                    <input type="number" 
+                        id="ex-${workoutNum}-${index}-sets" 
+                        value="${exercise.sets || 3}" 
+                        min="1" max="10"
+                        style="
+                            width: 100%;
+                            padding: 6px;
+                            background: rgba(0,0,0,0.5);
+                            border: 1px solid rgba(0,255,255,0.3);
+                            color: var(--neon-green);
+                            font-family: var(--font-mono);
+                            font-size: 12px;
+                            text-align: center;
+                        ">
+                </div>
+                
+                <div>
+                    <label style="color: var(--text-muted); font-size: 10px;">REPS:</label>
+                    <input type="text" 
+                        id="ex-${workoutNum}-${index}-reps" 
+                        value="${exercise.reps || '8-10'}" 
+                        placeholder="8-10"
+                        style="
+                            width: 100%;
+                            padding: 6px;
+                            background: rgba(0,0,0,0.5);
+                            border: 1px solid rgba(0,255,255,0.3);
+                            color: var(--neon-green);
+                            font-family: var(--font-mono);
+                            font-size: 12px;
+                            text-align: center;
+                        ">
+                </div>
+            </div>
+            
+            <!-- Terza riga: categoria + equipment -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                 <select id="ex-${workoutNum}-${index}-category" style="
                     padding: 6px;
                     background: rgba(0,0,0,0.5);
@@ -1133,9 +1269,6 @@ removeExerciseRow(workoutNum, index) {
 /**
  * Salva la scheda completa
  */
-/**
- * Salva la scheda completa
- */
 saveScheda(schedaId, isNew) {
     console.log('💾 Salvando scheda...');
     
@@ -1143,18 +1276,21 @@ saveScheda(schedaId, isNew) {
     const name = document.getElementById('scheda-name')?.value || `Scheda ${schedaId}`;
     const description = document.getElementById('scheda-description')?.value || '';
     
-    // Raccogli esercizi per tutti e 3 gli allenamenti
+    // Raccogli esercizi per allenamento 1 e 2
     const collectExercises = (workoutNum) => {
         const exercises = [];
-        document.querySelectorAll(`[data-workout="${workoutNum}"]`).forEach((row, idx) => {
-            const exerciseName = document.getElementById(`ex-${workoutNum}-${idx}-name`)?.value;
+        document.querySelectorAll(`#workout${workoutNum}-exercises .exercise-row`).forEach((row) => {
+            const index = row.dataset.index;
+            const exerciseName = document.getElementById(`ex-${workoutNum}-${index}-name`)?.value;
             if (exerciseName && exerciseName.trim()) {
+                const isChecked = document.getElementById(`ex-${workoutNum}-${index}-check`)?.checked;
                 exercises.push({
                     name: exerciseName.trim(),
-                    sets: parseInt(document.getElementById(`ex-${workoutNum}-${idx}-sets`)?.value) || 3,
-                    reps: document.getElementById(`ex-${workoutNum}-${idx}-reps`)?.value || '8-10',
-                    category: document.getElementById(`ex-${workoutNum}-${idx}-category`)?.value || 'Petto',
-                    equipment: document.getElementById(`ex-${workoutNum}-${idx}-equipment`)?.value || 'Bilanciere'
+                    sets: parseInt(document.getElementById(`ex-${workoutNum}-${index}-sets`)?.value) || 3,
+                    reps: document.getElementById(`ex-${workoutNum}-${index}-reps`)?.value || '8-10',
+                    category: document.getElementById(`ex-${workoutNum}-${index}-category`)?.value || 'Petto',
+                    equipment: document.getElementById(`ex-${workoutNum}-${index}-equipment`)?.value || 'Bilanciere',
+                    includeInThird: isChecked || false
                 });
             }
         });
@@ -1163,7 +1299,31 @@ saveScheda(schedaId, isNew) {
     
     const workout1Exercises = collectExercises(1);
     const workout2Exercises = collectExercises(2);
-    const workout3Exercises = collectExercises(3);
+    
+    // Genera automaticamente il terzo allenamento
+    const workout3Exercises = [];
+    
+    // Prima aggiungi gli esercizi spuntati del primo allenamento
+    workout1Exercises.forEach(ex => {
+        if (ex.includeInThird) {
+            workout3Exercises.push({
+                ...ex,
+                reps: ex.reps + ' (leggero)',
+                includeInThird: undefined // rimuovi il flag
+            });
+        }
+    });
+    
+    // Poi aggiungi gli esercizi spuntati del secondo allenamento
+    workout2Exercises.forEach(ex => {
+        if (ex.includeInThird) {
+            workout3Exercises.push({
+                ...ex,
+                reps: ex.reps + ' (leggero)',
+                includeInThird: undefined // rimuovi il flag
+            });
+        }
+    });
     
     // Validazione
     if (!name.trim()) {
@@ -1171,8 +1331,13 @@ saveScheda(schedaId, isNew) {
         return;
     }
     
-    if (workout1Exercises.length === 0 || workout2Exercises.length === 0 || workout3Exercises.length === 0) {
-        this.showMessage('⚠️ Tutti e tre gli allenamenti devono avere almeno un esercizio', 'warning');
+    if (workout1Exercises.length === 0 || workout2Exercises.length === 0) {
+        this.showMessage('⚠️ I primi due allenamenti devono avere almeno un esercizio', 'warning');
+        return;
+    }
+    
+    if (workout3Exercises.length === 0) {
+        this.showMessage('⚠️ Seleziona almeno un esercizio per il terzo allenamento', 'warning');
         return;
     }
     
@@ -1202,24 +1367,65 @@ saveScheda(schedaId, isNew) {
         }
     };
     
+       
     // Salva
     const schede = this.loadCustomWorkouts();
     schede[schedaId] = scheda;
-    
+
     if (this.saveCustomWorkouts(schede)) {
-        // Se è nuova, attivala automaticamente
-        if (isNew) {
+        // IMPORTANTE: Se è nuova O se è quella attiva, ricarica i template
+        if (isNew || schedaId === localStorage.getItem('active_scheda_id')) {
             this.setActiveScheda(schedaId);
-        }
         
+            // Forza il refresh dei template globali se ancora li usi
+            if (typeof WORKOUT_TEMPLATES !== 'undefined') {
+                delete WORKOUT_TEMPLATES[1];
+                delete WORKOUT_TEMPLATES[2];
+                delete WORKOUT_TEMPLATES[3];
+            }
+        }
+    
         this.showMessage('✅ Scheda salvata con successo!', 'success');
         setTimeout(() => this.showSchede(), 1500);
     } else {
-        this.showMessage('⌠ Errore nel salvataggio', 'error');
+        this.showMessage('❌ Errore nel salvataggio', 'error');
     }
 }
 
-
+/**
+ * Elimina una scheda
+ */
+deleteScheda(schedaId) {
+    if (!confirm(`⚠️ Vuoi davvero eliminare questa scheda?\n\nQuesta azione non può essere annullata.`)) {
+        return;
+    }
+    
+    const schede = this.loadCustomWorkouts();
+    const activeId = localStorage.getItem('active_scheda_id');
+    
+    // Non permettere di eliminare l'unica scheda
+    if (Object.keys(schede).length <= 1) {
+        this.showMessage('⚠️ Devi avere almeno una scheda', 'warning');
+        return;
+    }
+    
+    // Elimina la scheda
+    delete schede[schedaId];
+    
+    // Se era la scheda attiva, attiva la prima disponibile
+    if (schedaId === activeId) {
+        const firstId = Object.keys(schede)[0];
+        this.setActiveScheda(firstId);
+    }
+    
+    // Salva le modifiche
+    if (this.saveCustomWorkouts(schede)) {
+        this.showMessage('✅ Scheda eliminata', 'success');
+        this.showSchede();
+    } else {
+        this.showMessage('❌ Errore nell\'eliminazione', 'error');
+    }
+}
 
 /**
  * Crea una nuova scheda
@@ -1716,61 +1922,79 @@ importWorkout(file) {
     ============================ */
 
     /**
-     * Inizia una nuova sessione di allenamento
-     */
-    startWorkout(workoutNumber) {
+ * Inizia una nuova sessione di allenamento
+ */
+startWorkout(workoutNumber) {
     console.log(`🏋️ Iniziando allenamento ${workoutNumber}`);
     
     this.currentWorkout = workoutNumber;
     
-    // Carica schede personalizzate (con supporto scheda attiva)
+    // Carica schede personalizzate salvate localmente
     const customWorkouts = this.loadCustomWorkouts();
-    const activeScheda = this.getActiveScheda();
+    const activeSchedaId = localStorage.getItem('active_scheda_id');
     
-    let template;
+    let template = null;
     
-    if (activeScheda) {
-        // Usa la scheda attiva - tutti e 3 gli allenamenti sono definiti manualmente
+    // Prima cerca la scheda attiva nelle schede personalizzate
+    if (activeSchedaId && customWorkouts[activeSchedaId]) {
+        const activeScheda = customWorkouts[activeSchedaId];
+        console.log('Scheda attiva trovata:', activeScheda);
+        
+        // Prendi il workout specifico dalla scheda
         template = activeScheda[`workout${workoutNumber}`];
         
-        // Se è il terzo allenamento, imposta il flag per riduzione peso
+        // Se è il terzo allenamento, imposta il flag
         if (workoutNumber === 3) {
             this.isLightWorkout = true;
-            this.weightReductionFactor = 0.75; // Riduzione del 25%
+            this.weightReductionFactor = 0.75;
         } else {
             this.isLightWorkout = false;
             this.weightReductionFactor = 1;
         }
-    } else {
-        // Fallback sui template default
-        template = WORKOUT_TEMPLATES[workoutNumber];
     }
     
-    if (!template) {
-        this.showMessage('⌠ Scheda non trovata', 'error');
+    // Se non trova template nella scheda personalizzata, usa default SOLO come fallback
+    if (!template || !template.exercises || template.exercises.length === 0) {
+        console.warn('Template non trovato nella scheda attiva, uso fallback');
+        
+        // Crea un template vuoto di emergenza
+        template = {
+            id: workoutNumber,
+            name: `Allenamento ${workoutNumber}`,
+            description: 'Nessuna scheda attiva configurata',
+            exercises: []
+        };
+        
+        this.showMessage('⚠️ Nessuna scheda attiva trovata. Configura prima una scheda.', 'warning');
+        setTimeout(() => this.showSchede(), 2000);
         return;
     }
 
+    console.log('Template caricato:', template);
+
     this.hideAllSections();
     document.getElementById('workout-session').style.display = 'block';
-    document.getElementById('workout-title').textContent = template.name;
+    document.getElementById('workout-title').textContent = template.name || `Allenamento ${workoutNumber}`;
     this.updateCurrentDate();
     
     // Inizializza dati workout
     this.currentWorkoutData = {
         workoutNumber,
-        workoutName: template.name,
+        workoutName: template.name || `Allenamento ${workoutNumber}`,
         date: new Date().toISOString().split('T')[0],
         timestamp: new Date().toISOString(),
         exercises: {}
     };
     
+    // Renderizza gli esercizi della scheda attiva
     this.renderExercises(template.exercises);
+    
+    // Carica dati ultima sessione
     this.loadLastSessionData(workoutNumber);
     
-    // Se è il terzo allenamento, mostra avviso riduzione peso
+    // Se è il terzo allenamento, mostra avviso
     if (workoutNumber === 3) {
-        this.showMessage('💡 Allenamento leggero: suggerimenti peso -25%', 'info', 3000);
+        this.showMessage('💡 Allenamento leggero: pesi calcolati -25%', 'info', 3000);
     }
 }
 
@@ -1793,29 +2017,98 @@ getActiveScheda() {
 /**
  * Imposta una scheda come attiva
  */
-setActiveScheda(schedaId) {
+async setActiveScheda(schedaId) {
     localStorage.setItem('active_scheda_id', schedaId);
+    
+    // Sincronizza con Google Sheets se online
+    if (this.isOnline) {
+        try {
+            const schede = this.loadCustomWorkouts();
+            const schedaAttiva = schede[schedaId];
+            
+            if (schedaAttiva) {
+                const payload = {
+                    action: 'saveActiveScheda',
+                    data: schedaAttiva
+                };
+                
+                const res = await fetch(CONFIG.webAppUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain' },
+                    body: JSON.stringify(payload),
+                    mode: 'cors',
+                    credentials: 'omit'
+                });
+                
+                const json = await res.json();
+                console.log('Scheda sincronizzata con Sheets:', json);
+            }
+        } catch (err) {
+            console.error('Errore sincronizzazione scheda:', err);
+        }
+    }
+    
     this.showMessage('✅ Scheda attivata!', 'success');
 }
 
 
     /**
-     * Renderizza gli esercizi nel DOM
-     */
-    renderExercises(exercises) {
-        const container = document.getElementById('exercises-container');
-        container.innerHTML = '';
+ * Renderizza gli esercizi nel DOM
+ */
+renderExercises(exercises) {
+    const container = document.getElementById('exercises-container');
+    container.innerHTML = '';
+    
+    exercises.forEach((ex, i) => {
+        const card = document.createElement('div');
+        card.className = 'exercise-card';
         
-        exercises.forEach((ex, i) => {
-            const card = document.createElement('div');
-            card.className = 'exercise-card';
+        // Se è il terzo allenamento, mostra solo i pesi calcolati
+        if (this.currentWorkout === 3) {
             card.innerHTML = `
                 <div class="exercise-name">
                     ${ex.name}
                     <span style="font-size: 12px; opacity: 0.7;">${ex.category}</span>
                 </div>
                 <div class="exercise-details">
-                    ${ex.sets} serie x ${ex.reps} reps • ${ex.equipment}
+                    ${ex.sets} serie x ${ex.reps} • ${ex.equipment}
+                    <span style="color: var(--neon-yellow); font-weight: bold;">(-25% peso)</span>
+                </div>
+                <div class="sets-container">
+                    ${Array.from({ length: ex.sets }, (_, s) => `
+                        <div class="weight-display" 
+                             id="weight-${i}-${s}"
+                             data-exercise="${i}" 
+                             data-set="${s}"
+                             data-exercise-name="${ex.name}"
+                             style="
+                                padding: 12px 8px;
+                                background: rgba(255, 255, 0, 0.1);
+                                border: 1px solid var(--neon-yellow);
+                                color: var(--neon-yellow);
+                                text-align: center;
+                                font-size: 14px;
+                                font-weight: 600;
+                                font-family: var(--font-mono);
+                             ">
+                            <div style="font-size: 10px; opacity: 0.7;">Serie ${s+1}</div>
+                            <div id="weight-value-${i}-${s}">--</div>
+                        </div>
+                    `).join('')}
+                </div>
+                <div class="exercise-summary" id="summary-${i}" style="margin-top: 10px; font-size: 12px; color: #666;">
+                    Caricamento pesi...
+                </div>
+            `;
+        } else {
+            // Allenamenti normali (1 e 2)
+            card.innerHTML = `
+                <div class="exercise-name">
+                    ${ex.name}
+                    <span style="font-size: 12px; opacity: 0.7;">${ex.category}</span>
+                </div>
+                <div class="exercise-details">
+                    ${ex.sets} serie x ${ex.reps} • ${ex.equipment}
                 </div>
                 <div class="sets-container">
                     ${Array.from({ length: ex.sets }, (_, s) => `
@@ -1836,10 +2129,16 @@ setActiveScheda(schedaId) {
                     Volume: 0 kg • Max: 0 kg
                 </div>
             `;
-            container.appendChild(card);
-        });
+        }
+        
+        container.appendChild(card);
+    });
 
-        // Aggiungi event listeners
+    // Se è il terzo allenamento, calcola i pesi
+    if (this.currentWorkout === 3) {
+        this.calculateThirdWorkoutWeights();
+    } else {
+        // Aggiungi event listeners per allenamenti normali
         container.querySelectorAll('.set-input').forEach(input => {
             input.addEventListener('input', (e) => {
                 this.handleInputChange(e);
@@ -1848,36 +2147,149 @@ setActiveScheda(schedaId) {
             input.addEventListener('blur', (e) => this.validateInput(e.target));
         });
     }
+}
 
-    /**
-     * Gestisce il cambio di un input
-     */
-    handleInputChange(event) {
-        const input = event.target;
-        const exerciseIdx = parseInt(input.dataset.exercise);
-        const exerciseName = input.dataset.exerciseName;
+/**
+ * Calcola i pesi per il terzo allenamento
+ */
+calculateThirdWorkoutWeights() {
+    const template = this.getActiveScheda()?.[`workout${this.currentWorkout}`];
+    if (!template) return;
+    
+    template.exercises.forEach((ex, i) => {
+        // Trova l'ultimo peso usato per questo esercizio
+        let lastMaxWeight = 0;
         
-        // Aggiorna summary dell'esercizio
-        this.updateExerciseSummary(exerciseIdx, exerciseName);
-
-        // Se è il terzo allenamento, applica automaticamente la riduzione del 25%
-    if (this.currentWorkout === 3) {
-        const weight = parseFloat(input.value) || 0;
-        if (weight > 0) {
-            // Recupera il peso massimo dai primi due allenamenti per questo esercizio
-            const lastWeight1 = this.getLastWeight(exerciseName, 1);
-            const lastWeight2 = this.getLastWeight(exerciseName, 2);
-            const maxPreviousWeight = Math.max(lastWeight1, lastWeight2);
-            
-            if (maxPreviousWeight > 0 && weight > maxPreviousWeight * 0.75) {
-                // Suggerisci il peso ridotto
-                const suggestedWeight = (maxPreviousWeight * 0.75).toFixed(1);
-                input.value = suggestedWeight;
-                this.showMessage(`💡 Peso suggerito: ${suggestedWeight}kg (-25%)`, 'info', 2000);
+        // Prova prima con l'allenamento 1
+        const lastData1 = this.getLastWeightForExercise(ex.name, 1);
+        // Poi con l'allenamento 2
+        const lastData2 = this.getLastWeightForExercise(ex.name, 2);
+        
+        // Prendi il peso maggiore tra i due
+        lastMaxWeight = Math.max(lastData1, lastData2);
+        
+        // Se non trova nulla nei dati recenti, cerca nello storico
+        if (lastMaxWeight === 0) {
+            lastMaxWeight = this.getHistoricalMaxWeight(ex.name);
+        }
+        
+        // Calcola il peso ridotto
+        const reducedWeight = lastMaxWeight > 0 ? (lastMaxWeight * 0.75).toFixed(1) : 0;
+        
+        // Mostra i pesi calcolati
+        for (let s = 0; s < ex.sets; s++) {
+            const weightElement = document.getElementById(`weight-value-${i}-${s}`);
+            if (weightElement) {
+                if (reducedWeight > 0) {
+                    weightElement.textContent = `${reducedWeight} kg`;
+                    weightElement.style.color = 'var(--neon-green)';
+                } else {
+                    weightElement.textContent = 'N/D';
+                    weightElement.style.color = 'var(--text-muted)';
+                }
             }
         }
+        
+        // Aggiorna summary
+        const summaryEl = document.getElementById(`summary-${i}`);
+        if (summaryEl) {
+            if (reducedWeight > 0) {
+                const totalVolume = (reducedWeight * ex.sets).toFixed(1);
+                summaryEl.innerHTML = `
+                    Peso suggerito: <strong style="color: var(--neon-yellow);">${reducedWeight} kg</strong> • 
+                    Volume: <strong>${totalVolume} kg</strong> • 
+                    Base: ${lastMaxWeight.toFixed(1)} kg
+                `;
+            } else {
+                summaryEl.innerHTML = `
+                    <span style="color: var(--text-muted);">Nessun dato precedente disponibile</span>
+                `;
+            }
+        }
+        
+        // Salva nei dati del workout corrente
+        if (!this.currentWorkoutData.exercises[ex.name]) {
+            this.currentWorkoutData.exercises[ex.name] = {
+                name: ex.name,
+                category: ex.category,
+                sets: [],
+                totalVolume: 0,
+                maxWeight: 0
+            };
+        }
+        
+        // Popola con i pesi calcolati
+        for (let s = 0; s < ex.sets; s++) {
+            this.currentWorkoutData.exercises[ex.name].sets.push({
+                weight: parseFloat(reducedWeight) || 0,
+                reps: ex.reps,
+                completed: reducedWeight > 0
+            });
+        }
+        
+        if (reducedWeight > 0) {
+            this.currentWorkoutData.exercises[ex.name].totalVolume = reducedWeight * ex.sets;
+            this.currentWorkoutData.exercises[ex.name].maxWeight = parseFloat(reducedWeight);
+        }
+    });
+}
+
+/**
+ * Recupera l'ultimo peso per un esercizio specifico
+ */
+getLastWeightForExercise(exerciseName, workoutNumber) {
+    try {
+        // Prima prova con l'ultima sessione
+        const lastData = localStorage.getItem(`last_workout_${workoutNumber}`);
+        if (lastData) {
+            const parsed = JSON.parse(lastData);
+            const exercise = parsed.exercises?.[exerciseName];
+            if (exercise && exercise.maxWeight > 0) {
+                return exercise.maxWeight;
+            }
+        }
+        
+        // Poi prova con tutti i dati salvati localmente
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && key.startsWith(`workout_`) && key.includes(`_${workoutNumber}_`)) {
+                const data = JSON.parse(localStorage.getItem(key));
+                const exercise = data.exercises?.[exerciseName];
+                if (exercise && exercise.maxWeight > 0) {
+                    return exercise.maxWeight;
+                }
+            }
+        }
+    } catch (err) {
+        console.error('Errore recupero peso:', err);
     }
+    return 0;
+}
+
+/**
+ * Cerca il peso massimo storico per un esercizio
+ */
+getHistoricalMaxWeight(exerciseName) {
+    let maxWeight = 0;
+    
+    try {
+        // Cerca in tutti i dati salvati
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && key.startsWith('workout_')) {
+                const data = JSON.parse(localStorage.getItem(key));
+                const exercise = data.exercises?.[exerciseName];
+                if (exercise && exercise.maxWeight > maxWeight) {
+                    maxWeight = exercise.maxWeight;
+                }
+            }
+        }
+    } catch (err) {
+        console.error('Errore ricerca storica:', err);
     }
+    
+    return maxWeight;
+}
 
     /**
  * Recupera l'ultimo peso usato per un esercizio in un allenamento specifico
@@ -2018,11 +2430,27 @@ if (this.currentWorkout === 3) {
      * Raccoglie i dati del workout corrente
      */
     collectWorkoutData() {
-        if (!this.currentWorkout) return null;
-        
-        const template = WORKOUT_TEMPLATES[this.currentWorkout];
-        const workoutData = { ...this.currentWorkoutData };
-        
+    if (!this.currentWorkout) return null;
+    
+    // USA LA SCHEDA ATTIVA, NON I TEMPLATE DEFAULT
+    const customWorkouts = this.loadCustomWorkouts();
+    const activeSchedaId = localStorage.getItem('active_scheda_id');
+    
+    if (!activeSchedaId || !customWorkouts[activeSchedaId]) {
+        console.error('Nessuna scheda attiva trovata');
+        return null;
+    }
+    
+    const activeScheda = customWorkouts[activeSchedaId];
+    const template = activeScheda[`workout${this.currentWorkout}`];
+    
+    if (!template || !template.exercises) {
+        console.error('Template non valido per workout', this.currentWorkout);
+        return null;
+    }
+    
+    const workoutData = { ...this.currentWorkoutData };
+    
         template.exercises.forEach((ex, i) => {
             const exData = {
                 name: ex.name,
@@ -2743,6 +3171,41 @@ window.showAppStatus = function() {
     alert('📊 Stato App:\n' + JSON.stringify(status, null, 2));
     
     return status;
+};
+
+/**
+ * Debug: mostra scheda attiva
+ */
+window.debugActiveScheda = function() {
+    const customWorkouts = app.loadCustomWorkouts();
+    const activeSchedaId = localStorage.getItem('active_scheda_id');
+    
+    console.log('=== DEBUG SCHEDA ATTIVA ===');
+    console.log('ID Attivo:', activeSchedaId);
+    
+    if (activeSchedaId && customWorkouts[activeSchedaId]) {
+        const scheda = customWorkouts[activeSchedaId];
+        console.log('Nome:', scheda.name);
+        console.log('Workout 1 esercizi:', scheda.workout1?.exercises?.map(e => e.name));
+        console.log('Workout 2 esercizi:', scheda.workout2?.exercises?.map(e => e.name));
+        console.log('Workout 3 esercizi:', scheda.workout3?.exercises?.map(e => e.name));
+    } else {
+        console.log('NESSUNA SCHEDA ATTIVA TROVATA!');
+    }
+    
+    console.log('Tutte le schede:', customWorkouts);
+    return customWorkouts;
+};
+
+/**
+ * Debug: resetta e pulisci tutto
+ */
+window.resetSchede = function() {
+    if (confirm('⚠️ ATTENZIONE: Questo cancellerà TUTTE le schede. Continuare?')) {
+        localStorage.removeItem('custom_schede');
+        localStorage.removeItem('active_scheda_id');
+        location.reload();
+    }
 };
 
 // Log inizializzazione
