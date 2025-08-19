@@ -246,14 +246,14 @@ renderExerciseCharts(exerciseData) {
         
         // Header della card con statistiche
         const trendIcon = data.trend === 'up' ? '📈' : 
-                         data.trend === 'down' ? '📉' : '➡️';
+                         data.trend === 'down' ? '📉' : '';
         const trendColor = data.trend === 'up' ? 'var(--neon-green)' : 
                           data.trend === 'down' ? '#ff0040' : 'var(--neon-yellow)';
         
         card.innerHTML = `
             <div class="exercise-name" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                 <span>${name}</span>
-                <span style="color: ${trendColor}; font-size: 20px;">${trendIcon}</span>
+                ${trendIcon ? `<span style="color: ${trendColor}; font-size: 20px;">${trendIcon}</span>` : ''}
             </div>
             <div class="exercise-details" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 20px;">
                 <div style="padding: 10px; background: rgba(0,255,65,0.05); border: 1px solid rgba(0,255,65,0.2);">
