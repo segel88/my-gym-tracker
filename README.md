@@ -53,11 +53,11 @@ my-gym-tracker/
 - [x] PWA manifest
 
 ### 🚧 In Sviluppo (v1.1)
-- [ ] Connessione Google Apps Script
-- [ ] Sincronizzazione Google Sheets
-- [ ] Statistiche e grafici
-- [ ] Gestione schede personalizzate
-- [ ] Record personali
+- [X] Connessione Google Apps Script
+- [x] Sincronizzazione Google Sheets
+- [x] Statistiche e grafici
+- [x] Gestione schede personalizzate
+- [x] Record personali
 
 ### 🔮 Prossime Release
 - [ ] Export dati (PDF, Excel)
@@ -72,56 +72,6 @@ my-gym-tracker/
 - Browser moderno (Chrome, Firefox, Safari, Edge)
 - Git installato
 - Account Google (per Apps Script)
-
-### Installazione
-
-1. **Clona il repository**
-   ```bash
-   git clone https://github.com/TUO_USERNAME/my-gym-tracker.git
-   cd my-gym-tracker
-   ```
-
-2. **Avvia server locale** (opzionale)
-   ```bash
-   # Con Python 3
-   python -m http.server 8000
-   
-   # Con Node.js (http-server)
-   npx http-server
-   
-   # Con VS Code Live Server extension
-   # Click destro su index.html > "Open with Live Server"
-   ```
-
-3. **Apri nel browser**
-   ```
-   http://localhost:8000
-   ```
-
-## 🌐 Deploy su GitHub Pages
-
-1. **Crea repository su GitHub**
-   - Vai su GitHub.com
-   - Crea nuovo repository "my-gym-tracker"
-   - NON inizializzare con README
-
-2. **Push del codice**
-   ```bash
-   git remote add origin https://github.com/TUO_USERNAME/my-gym-tracker.git
-   git branch -M main
-   git push -u origin main
-   ```
-
-3. **Abilita GitHub Pages**
-   - Vai su Settings > Pages
-   - Source: Deploy from a branch
-   - Branch: main / (root)
-   - Save
-
-4. **Accedi all'app**
-   ```
-   https://TUO_USERNAME.github.io/my-gym-tracker/
-   ```
 
 ## 📱 Installazione come App
 
@@ -199,18 +149,16 @@ I contributi sono benvenuti! Per favore:
 
 ## 📝 Changelog
 
-### v1.0.0 (2025-01-01)
+### v1.0.0 (20/08/2025)
 - ✨ Interface utente completa
 - ✨ Sistema di navigazione
 - ✨ Template allenamenti predefiniti
 - ✨ Salvataggio locale
 - ✨ PWA manifest
 - ✨ Design responsive
-
-### v1.1.0 (In sviluppo)
-- 🔄 Integrazione Google Apps Script
-- 📊 Sistema statistiche base
-- 🏆 Tracking record personali
+- ✨ Integrazione Google Apps Script
+- ✨ Sistema statistiche base
+- ✨ Tracking record personali
 
 ## 📄 Licenza
 
@@ -218,22 +166,14 @@ Questo progetto è rilasciato sotto licenza MIT. Vedi il file `LICENSE` per i de
 
 ## 👨‍💻 Autore
 
-**Il Tuo Nome**
-- GitHub: [@tuo-username](https://github.com/tuo-username)
+- GitHub: [@Segel88](https://github.com/Segel88)
 - Email: tua.email@example.com
-
-## 🙏 Ringraziamenti
-
-- Icone da [Lucide Icons](https://lucide.dev/)
-- Ispirazione design da Material Design
-- Community GitHub per il feedback
 
 ## 📞 Supporto
 
 Se hai problemi o domande:
 - 🐛 [Apri un Issue](https://github.com/tuo-username/my-gym-tracker/issues)
 - 💬 [Discussioni](https://github.com/tuo-username/my-gym-tracker/discussions)
-- 📧 Email: tua.email@example.com
 
 ---
 
