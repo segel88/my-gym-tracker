@@ -12,10 +12,10 @@
   "categories": ["health", "fitness", "sports"],
   "icons": [
     {
-      "src": "assets/icons/icon-72.png",
-      "sizes": "72x72",
-      "type": "image/png",
-      "purpose": "maskable any"
+      "src": "data:image/svg+xml, <svg xmlns='http://www.w3.org/2000/svg' viewBox= '0 0 512 512'><rect width='512' height='512' fill='%230a0014'/><text x'50%25' y='50%25' font-size='350' fill='%230ffff' text-anchor='middle' dominant-baseline='central'>🦾</text></svg>",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
     },
     {
       "src": "assets/icons/icon-96.png",
@@ -24,10 +24,10 @@
       "purpose": "maskable any"
     },
     {
-      "src": "assets/icons/icon-128.png",
-      "sizes": "128x128",
+      "src": "assets/Cyber.png",
+      "sizes": "512x512",
       "type": "image/png",
-      "purpose": "maskable any"
+      "purpose": "any"
     },
     {
       "src": "assets/icons/icon-144.png",
