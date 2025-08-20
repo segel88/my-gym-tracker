@@ -8,8 +8,8 @@ const urlsToCache = [
   './js/app.js',
   './js/config.js',
   './js/utils.js',
-  './asset/icon-gym.svg',
-  './asset/Cyber.png'
+  './assets/icon-gym.svg',  // ← Cambia in .svg
+  './assets/Cyber.png'
 ];
 
 // Installa il Service Worker
