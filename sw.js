@@ -8,7 +8,7 @@ const urlsToCache = [
   './js/app.js',
   './js/config.js',
   './js/utils.js',
-  './assets/icon-gym.svg',  // ← Cambia in .svg
+  './assets/icon-gym.png',  // ← Cambia in .svg
   './assets/Cyber.png'
 ];
 
