@@ -2068,7 +2068,10 @@ renderExercises(exercises) {
             card.innerHTML = `
                 <div class="exercise-name">
                     ${ex.name}
-                    <span style="font-size: 12px; opacity: 0.7;">${ex.category}</span>
+                    <span id="last-weight-${i}" style="font-size: 11px; opacity: 0.6; margin-left: 8px; color: var(--neon-yellow);">
+                        <!-- Peso ultima sessione caricato dinamicamente -->
+                    </span>
+                    <span style="font-size: 12px; opacity: 0.7; display: block;">${ex.category}</span>
                 </div>
                 <div class="exercise-details">
                     ${ex.sets} serie x ${ex.reps} • ${ex.equipment}
@@ -2105,7 +2108,10 @@ renderExercises(exercises) {
             card.innerHTML = `
                 <div class="exercise-name">
                     ${ex.name}
-                    <span style="font-size: 12px; opacity: 0.7;">${ex.category}</span>
+                    <span id="last-weight-${i}" style="font-size: 11px; opacity: 0.6; margin-left: 8px; color: var(--accent-color);">
+                        <!-- Peso ultima sessione caricato dinamicamente -->
+                    </span>
+                    <span style="font-size: 12px; opacity: 0.7; display: block;">${ex.category}</span>
                 </div>
                 <div class="exercise-details">
                     ${ex.sets} serie x ${ex.reps} • ${ex.equipment}
@@ -2146,6 +2152,36 @@ renderExercises(exercises) {
             });
             input.addEventListener('blur', (e) => this.validateInput(e.target));
         });
+    }
+
+    // Carica e mostra i pesi dell'ultima sessione per ogni esercizio
+    this.loadLastWeightsDisplay(exercises);
+}
+
+/**
+ * Carica e mostra i pesi dell'ultima sessione per ogni esercizio
+ */
+async loadLastWeightsDisplay(exercises) {
+    for (let i = 0; i < exercises.length; i++) {
+        const ex = exercises[i];
+        const lastWeightElement = document.getElementById(`last-weight-${i}`);
+        
+        if (lastWeightElement) {
+            try {
+                const lastWeight = await this.getLastWeightForExercise(ex.name, this.currentWorkout);
+                
+                if (lastWeight && lastWeight > 0) {
+                    lastWeightElement.innerHTML = `(ultima: ${lastWeight}kg)`;
+                    lastWeightElement.style.color = this.currentWorkout === 3 ? 'var(--neon-yellow)' : 'var(--accent-color)';
+                } else {
+                    lastWeightElement.innerHTML = `(nuovo esercizio)`;
+                    lastWeightElement.style.opacity = '0.4';
+                }
+            } catch (err) {
+                console.warn(`Errore caricamento ultimo peso per ${ex.name}:`, err);
+                lastWeightElement.innerHTML = '';
+            }
+        }
     }
 }
 
@@ -2400,6 +2436,90 @@ if (this.currentWorkout === 3) {
             input.value = CONFIG.limits.maxWeight;
             this.showMessage(`⚠️ Peso massimo: ${CONFIG.limits.maxWeight}kg`, 'warning');
         }
+    }
+
+    /**
+     * Ottiene il peso dell'ultima serie di un esercizio dalle sessioni precedenti
+     */
+    async getLastWeightForExercise(exerciseName, workoutNumber) {
+        console.log(`🔍 Cercando ultimo peso per: ${exerciseName} (Workout ${workoutNumber})`);
+        
+        try {
+            // Prima prova dai dati locali dell'ultima sessione
+            const lastData = localStorage.getItem(`last_workout_${workoutNumber}`);
+            if (lastData) {
+                console.log('📱 Trovati dati locali:', lastData);
+                const parsed = JSON.parse(lastData);
+                if (parsed.exercises && parsed.exercises[exerciseName]) {
+                    const exercise = parsed.exercises[exerciseName];
+                    if (exercise.sets && exercise.sets.length > 0) {
+                        // Trova l'ultima serie con peso valido
+                        for (let i = exercise.sets.length - 1; i >= 0; i--) {
+                            if (exercise.sets[i].weight && exercise.sets[i].weight > 0) {
+                                console.log(`✅ Peso trovato localmente: ${exercise.sets[i].weight}kg`);
+                                return parseFloat(exercise.sets[i].weight);
+                            }
+                        }
+                    }
+                }
+            } else {
+                console.log('📱 Nessun dato locale trovato per questo workout');
+            }
+
+            // Se non trovato nei dati locali, prova a recuperare dallo storico remoto
+            console.log('🌐 Tentativo recupero da server...');
+            const url = `${CONFIG.webAppUrl}?action=getHistory&limit=10`;
+            console.log('URL chiamata:', url);
+            
+            const res = await fetch(url, {
+                method: 'GET',
+                mode: 'cors',
+                cache: 'no-store'
+            });
+            
+            console.log('Risposta server status:', res.status);
+            
+            if (res.ok) {
+                const json = await res.json();
+                console.log('Dati ricevuti dal server:', json);
+                
+                if (json?.success && json.workouts) {
+                    console.log(`📊 Trovati ${json.workouts.length} allenamenti nello storico`);
+                    
+                    // Cerca negli allenamenti più recenti dello stesso tipo
+                    for (const workout of json.workouts) {
+                        if (workout.sessionNumber === workoutNumber && workout.exercises) {
+                            console.log(`🎯 Controllo workout ${workout.date} - ${workout.sessionName}`);
+                            
+                            // Cerca l'esercizio specifico nell'array
+                            const exerciseData = workout.exercises.find(ex => ex.name === exerciseName);
+                            if (exerciseData && exerciseData.sets && exerciseData.sets.length > 0) {
+                                console.log(`💪 Trovato esercizio ${exerciseName} con ${exerciseData.sets.length} serie`);
+                                
+                                // Trova l'ultimo peso valido (l'ultimo valore nell'array sets)
+                                for (let i = exerciseData.sets.length - 1; i >= 0; i--) {
+                                    const weight = exerciseData.sets[i];
+                                    if (weight && weight > 0) {
+                                        console.log(`✅ Peso trovato dal server: ${weight}kg`);
+                                        return parseFloat(weight);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    console.log('❌ Nessun peso trovato negli allenamenti del server');
+                } else {
+                    console.log('⚠️ Risposta server non valida:', json);
+                }
+            } else {
+                console.log('❌ Errore risposta server:', res.status, res.statusText);
+            }
+        } catch (err) {
+            console.error('❌ Errore nel recupero ultimo peso:', err);
+        }
+        
+        console.log(`❌ Nessun peso trovato per ${exerciseName}`);
+        return null;
     }
 
     /* ============================
